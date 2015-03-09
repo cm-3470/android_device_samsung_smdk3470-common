@@ -26,7 +26,7 @@ PRODUCT_PACKAGES := \
     audio.usb.default
 
 PRODUCT_COPY_FILES += \
-    $(COMMON_PATH)/audio/tiny_hw.xml:system/etc/tiny_hw.xml
+    $(COMMON_PATH)/audio/mixer_paths.xml:system/etc/mixer_paths.xml
 
 # HW composer
 PRODUCT_PACKAGES += \

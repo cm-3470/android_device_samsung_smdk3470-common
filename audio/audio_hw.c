@@ -26,7 +26,6 @@
 #include <stdint.h>
 #include <sys/time.h>
 #include <stdlib.h>
-#include <expat.h>
 
 #include <cutils/log.h>
 #include <cutils/str_parms.h>
@@ -41,6 +40,7 @@
 #include <audio_utils/echo_reference.h>
 #include <hardware/audio_effect.h>
 #include <audio_effects/effect_aec.h>
+#include <audio_route/audio_route.h>
 
 #include "audio_hw.h"
 #include "ril_interface.h"
@@ -85,10 +85,7 @@ struct smdk3xxx_audio_device {
     struct audio_hw_device hw_device;
 
     pthread_mutex_t lock;       /* see note below on mutex acquisition order */
-    struct smdk3xxx_dev_cfg *dev_cfgs;
-    int num_dev_cfgs;
-    struct mixer *mixer;
-    struct mixer_ctls mixer_ctls;
+    struct audio_route *ar;
     audio_mode_t mode;
     int active_out_device;
     int out_device;
@@ -185,16 +182,6 @@ struct smdk3xxx_stream_in {
     struct smdk3xxx_audio_device *dev;
 };
 
-struct smdk3xxx_dev_cfg {
-    int mask;
-
-    struct route_setting *on;
-    unsigned int on_len;
-
-    struct route_setting *off;
-    unsigned int off_len;
-};
-
 /**
  * NOTE: when multiple mutexes have to be acquired, always respect the following order:
  *        hw device > in stream > out stream
@@ -207,149 +194,206 @@ static int do_input_standby(struct smdk3xxx_stream_in *in);
 static int do_output_standby(struct smdk3xxx_stream_out *out);
 static void in_update_aux_channels(struct smdk3xxx_stream_in *in, effect_handle_t effect);
 
-/* The enable flag when 0 makes the assumption that enums are disabled by
- * "Off" and integers/booleans by 0 */
-static int set_bigroute_by_array(struct mixer *mixer, struct route_setting *route,
-                              int enable)
+static const struct dev_name_map_t {
+    int mask;
+    const char *name;
+} dev_names[] = {
+    { AUDIO_DEVICE_OUT_EARPIECE, "Earpiece" },
+    { AUDIO_DEVICE_OUT_SPEAKER, "Speaker" },
+    { AUDIO_DEVICE_OUT_WIRED_HEADSET, "Headset Out" },
+    { AUDIO_DEVICE_OUT_WIRED_HEADPHONE, "Headphone" },
+    { AUDIO_DEVICE_OUT_BLUETOOTH_SCO, "SCO" },
+    { AUDIO_DEVICE_OUT_BLUETOOTH_SCO_HEADSET, "SCO Headset Out" },
+    { AUDIO_DEVICE_OUT_BLUETOOTH_SCO_CARKIT, "SCO Carkit" },
+    { AUDIO_DEVICE_OUT_ANLG_DOCK_HEADSET, "Analogue Dock Out" },
+    { AUDIO_DEVICE_OUT_AUX_DIGITAL, "AUX Digital Out" },
+
+    { AUDIO_DEVICE_IN_BUILTIN_MIC, "Builtin Mic" },
+    { AUDIO_DEVICE_IN_BACK_MIC, "Back Mic" },
+    { AUDIO_DEVICE_IN_WIRED_HEADSET, "Headset In" },
+    { AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET, "SCO Headset In" },
+    { AUDIO_DEVICE_IN_FM_TUNER, "FMRadio In" },
+};
+
+#define VERB_NORMAL         "Normal"
+#define VERB_RINGTONE       "Ringtone"
+#define VERB_COMMUNICATION  "Communication"
+#define VERB_VOICECALL      "Voicecall"
+#define VERB_FMRADIO        "FMRadio"
+#define VERB_LOOPBACK       "Loopback"
+
+#define MODIFIER_NORMAL        "Normal"
+#define MODIFIER_INCALL        "Incall"
+#define MODIFIER_INCALL_IN     "IncallIn"
+#define MODIFIER_RINGTONE      "Ringtone"
+#define MODIFIER_DUAL_NORMAL   "Dual Normal"
+#define MODIFIER_DUAL_RINGTONE "Dual Ringtone"
+#define MODIFIER_CODEC_RX_MUTE "CodecRxMute"
+/* Incommunication
+ * VideoCall
+ * TTY Mode Out
+ * VoLTECpCallout
+ * Voipout
+ * SecVoipout
+ * ImsVoipout
+ * FMRadio
+ * FMRadio_Mute
+ * Loopback
+ * ... */
+
+#define PREFIX_DEVICE   "Device"
+#define PREFIX_VERB     "Verb"
+#define PREFIX_MODIFIER "Modifier"
+#define ENABLE_FLAG(e) (e ? "On" : "Off")
+
+static inline bool dev_contains_mask(audio_devices_t devices, audio_devices_t mask)
 {
-    struct mixer_ctl *ctl;
-    unsigned int i, j, ret;
-
-    /* Go through the route array and set each value */
-    i = 0;
-    while (route[i].ctl_name) {
-        ctl = mixer_get_ctl_by_name(mixer, route[i].ctl_name);
-        if (!ctl) {
-        ALOGE("Unknown control '%s'\n", route[i].ctl_name);
-            return -EINVAL;
-        }
-
-        if (route[i].strval) {
-            if (enable) {
-                ret = mixer_ctl_set_enum_by_string(ctl, route[i].strval);
-                if (ret != 0) {
-                    ALOGE("Failed to set '%s' to '%s'\n", route[i].ctl_name, route[i].strval);
-                } else {
-                    ALOGV("Set '%s' to '%s'\n", route[i].ctl_name, route[i].strval);
-                }
-            } else {
-                ret = mixer_ctl_set_enum_by_string(ctl, "Off");
-                if (ret != 0) {
-                    ALOGE("Failed to set '%s' to '%s'\n", route[i].ctl_name, route[i].strval);
-                } else {
-                    ALOGV("Set '%s' to '%s'\n", route[i].ctl_name, "Off");
-                }
-            }
-        } else {
-            /* This ensures multiple (i.e. stereo) values are set jointly */
-            for (j = 0; j < mixer_ctl_get_num_values(ctl); j++) {
-                if (enable) {
-                    ret = mixer_ctl_set_value(ctl, j, route[i].intval);
-                    if (ret != 0) {
-                        ALOGE("Failed to set '%s' to '%d'\n", route[i].ctl_name, route[i].intval);
-                    } else {
-                        ALOGV("Set '%s' to '%d'\n", route[i].ctl_name, route[i].intval);
-                    }
-                } else {
-                    ret = mixer_ctl_set_value(ctl, j, 0);
-                    if (ret != 0) {
-                        ALOGE("Failed to set '%s' to '%d'\n", route[i].ctl_name, route[i].intval);
-                    } else {
-                        ALOGV("Set '%s' to '%d'\n", route[i].ctl_name, 0);
-                    }
-                }
-            }
-        }
-        i++;
-    }
-
-    return 0;
+    if ((devices & AUDIO_DEVICE_BIT_IN) != (mask & AUDIO_DEVICE_BIT_IN))
+        return false;
+    return ((devices & mask) == mask);
 }
 
-/* The enable flag when 0 makes the assumption that enums are disabled by
- * "Off" and integers/booleans by 0 */
-static int set_route_by_array(struct mixer *mixer, struct route_setting *route,
-                  unsigned int len)
+static int apply_verb_route(struct smdk3xxx_audio_device *adev, const char* verb, bool enable)
 {
-    struct mixer_ctl *ctl;
-    unsigned int i, j, ret;
+    char route[256];
+    snprintf(route, sizeof(route), PREFIX_VERB"|%s|%s", ENABLE_FLAG(enable), verb);
+    ALOGV("applying route: %s\n", route);
+    return audio_route_apply_path(adev->ar, route);
+}
 
-    /* Go through the route array and set each value */
-    for (i = 0; i < len; i++) {
-        ctl = mixer_get_ctl_by_name(mixer, route[i].ctl_name);
-        if (!ctl) {
-        ALOGE("Unknown control '%s'\n", route[i].ctl_name);
-            return -EINVAL;
+static int apply_device_route(struct smdk3xxx_audio_device *adev, const char* dev_name, bool enable)
+{
+    char route[256];
+    snprintf(route, sizeof(route), PREFIX_DEVICE"|%s|%s", ENABLE_FLAG(enable), dev_name);
+    ALOGV("applying route: %s\n", route);
+    return audio_route_apply_path(adev->ar, route);
+}
+
+static int apply_modifier_routes(struct smdk3xxx_audio_device *adev, const char* modifier, bool enable)
+{
+    size_t devIdx, outIdx;
+    char route[256];
+    bool success;
+
+    // try to apply simple modifier
+    snprintf(route, sizeof(route), PREFIX_MODIFIER"|%s|%s", ENABLE_FLAG(enable), modifier);
+    ALOGV("applying route: %s\n", route);
+    if (audio_route_apply_path(adev->ar, route) == 0)
+        success = true;
+
+    for (devIdx = 0; devIdx < ARRAY_SIZE(dev_names); ++devIdx) {
+        // try to apply supported output dev modifiers
+        if (dev_contains_mask(adev->out_device, dev_names[devIdx].mask)) {
+            snprintf(route, sizeof(route), "Modifier|%s|%s|%s", 
+                        ENABLE_FLAG(enable),
+                        modifier, 
+                        dev_names[devIdx].name);
+            ALOGV("applying route: %s\n", route);
+            if (audio_route_apply_path(adev->ar, route) == 0)
+                success = true;
         }
 
-        if (route[i].strval) {
-        ret = mixer_ctl_set_enum_by_string(ctl, route[i].strval);
-        if (ret != 0) {
-        ALOGE("Failed to set '%s' to '%s'\n",
-             route[i].ctl_name, route[i].strval);
-        } else {
-        ALOGV("Set '%s' to '%s'\n",
-             route[i].ctl_name, route[i].strval);
-        }
-
-        } else {
-            /* This ensures multiple (i.e. stereo) values are set jointly */
-            for (j = 0; j < mixer_ctl_get_num_values(ctl); j++) {
-        ret = mixer_ctl_set_value(ctl, j, route[i].intval);
-        if (ret != 0) {
-            ALOGE("Failed to set '%s'.%d to %d\n",
-             route[i].ctl_name, j, route[i].intval);
-        } else {
-            ALOGV("Set '%s'.%d to %d\n",
-             route[i].ctl_name, j, route[i].intval);
-        }
-        }
-        }
+        // try to apply supported input dev modifiers
+        if (dev_contains_mask(adev->in_device|AUDIO_DEVICE_BIT_IN, dev_names[devIdx].mask)) {
+            snprintf(route, sizeof(route), "Modifier|%s|%s|%s", ENABLE_FLAG(enable), modifier, dev_names[devIdx].name);
+            ALOGV("applying route: %s\n", route);
+            if (audio_route_apply_path(adev->ar, route))
+                success = true;
+            
+            // try to apply conditional input/output dev modifiers
+            for (outIdx = 0; outIdx < ARRAY_SIZE(dev_names); ++outIdx) {
+                if (dev_contains_mask(adev->out_device, dev_names[outIdx].mask)) {
+                    snprintf(route, sizeof(route), "Modifier|%s|%s|%s|%s", 
+                             ENABLE_FLAG(enable),
+                             modifier, 
+                             dev_names[devIdx].name, dev_names[outIdx].name);
+                    ALOGV("applying route: %s\n", route);
+                    if (audio_route_apply_path(adev->ar, route) == 0)
+                        success = true;
+                }
+            }
+        }        
     }
-
-    return 0;
+    
+    // true if one route was applied
+    return (success ? 0 : -1);
 }
 
 /* Must be called with lock */
 void select_devices(struct smdk3xxx_audio_device *adev)
 {
-    int i;
+    size_t i;
+
     if (adev->active_out_device == adev->out_device && adev->active_in_device == adev->in_device)
-    return;
+        return;
 
     ALOGV("Changing output device %x => %x\n", adev->active_out_device, adev->out_device);
     ALOGV("Changing input device %x => %x\n", adev->active_in_device, adev->in_device);
 
-    /* Turn on new devices first so we don't glitch due to powerdown... */
-    for (i = 0; i < adev->num_dev_cfgs; i++)
-    if ((adev->out_device & adev->dev_cfgs[i].mask) &&
-        !(adev->active_out_device & adev->dev_cfgs[i].mask) &&
-        !(adev->dev_cfgs[i].mask & AUDIO_DEVICE_BIT_IN))
-        set_route_by_array(adev->mixer, adev->dev_cfgs[i].on,
-                   adev->dev_cfgs[i].on_len);
+    audio_route_reset(adev->ar);    
+    
+    // each device in mixer_paths.xml represents one bit in the device mask (no compund devices)
+    for (i = 0; i < ARRAY_SIZE(dev_names); ++i) {
+        if (dev_contains_mask(adev->in_device|AUDIO_DEVICE_BIT_IN, dev_names[i].mask) ||
+            dev_contains_mask(adev->out_device, dev_names[i].mask)) 
+        {
+            apply_device_route(adev, dev_names[i].name, true);
+        }
+    }
+    
+    if (adev->mode == AUDIO_MODE_IN_CALL) {
+        apply_verb_route(adev, VERB_VOICECALL, true);
+        apply_modifier_routes(adev, MODIFIER_INCALL, true);
+        apply_modifier_routes(adev, MODIFIER_INCALL_IN, true);
+        //apply_modifier_routes(adev, MODIFIER_CODEC_RX_MUTE, true);
+        
+#if 0
+        int headset_on;
+        int headphone_on;
+        int speaker_on;
+        int earpiece_on;
+        int bt_on;
+        
+        headset_on = adev->out_device & AUDIO_DEVICE_OUT_WIRED_HEADSET;
+        headphone_on = adev->out_device & AUDIO_DEVICE_OUT_WIRED_HEADPHONE;
+        speaker_on = adev->out_device & AUDIO_DEVICE_OUT_SPEAKER;
+        earpiece_on = adev->out_device & AUDIO_DEVICE_OUT_EARPIECE;
+        bt_on = adev->out_device & AUDIO_DEVICE_OUT_ALL_SCO;
 
-    for (i = 0; i < adev->num_dev_cfgs; i++)
-    if ((adev->in_device & adev->dev_cfgs[i].mask) &&
-        !(adev->active_in_device & adev->dev_cfgs[i].mask) &&
-        (adev->dev_cfgs[i].mask & AUDIO_DEVICE_BIT_IN))
-        set_route_by_array(adev->mixer, adev->dev_cfgs[i].on,
-                   adev->dev_cfgs[i].on_len);
-
-    /* ...then disable old ones. */
-    for (i = 0; i < adev->num_dev_cfgs; i++)
-    if (!(adev->out_device & adev->dev_cfgs[i].mask) &&
-        (adev->active_out_device & adev->dev_cfgs[i].mask) &&
-        !(adev->dev_cfgs[i].mask & AUDIO_DEVICE_BIT_IN))
-        set_route_by_array(adev->mixer, adev->dev_cfgs[i].off,
-                   adev->dev_cfgs[i].off_len);
-
-    for (i = 0; i < adev->num_dev_cfgs; i++)
-    if (!(adev->in_device & adev->dev_cfgs[i].mask) &&
-        (adev->active_in_device & adev->dev_cfgs[i].mask) &&
-        (adev->dev_cfgs[i].mask & AUDIO_DEVICE_BIT_IN))
-        set_route_by_array(adev->mixer, adev->dev_cfgs[i].off,
-                   adev->dev_cfgs[i].off_len);
-
+        if (!bt_on) {
+            /* force tx path according to TTY mode when in call */
+            switch(adev->tty_mode) {
+                case TTY_MODE_FULL:
+                case TTY_MODE_HCO:
+                    /* tx path from headset mic */
+                    headphone_on = 0;
+                    headset_on = 1;
+                    speaker_on = 0;
+                    earpiece_on = 0;
+                    break;
+                case TTY_MODE_VCO:
+                    /* tx path from device sub mic */
+                    headphone_on = 0;
+                    headset_on = 0;
+                    speaker_on = 1;
+                    earpiece_on = 0;
+                    break;
+                case TTY_MODE_OFF:
+                default:
+                    break;
+            }
+        }
+#endif
+    } 
+    else 
+    {
+        apply_verb_route(adev, VERB_NORMAL, true);
+        apply_modifier_routes(adev, MODIFIER_NORMAL, true);
+        //apply_modifier_routes(adev, MODIFIER_CODEC_RX_MUTE, false);
+    }
+ 
+    audio_route_update_mixer(adev->ar);
+        
     adev->active_out_device = adev->out_device;
     adev->active_in_device = adev->in_device;
 }
@@ -600,15 +644,6 @@ static void select_mode(struct smdk3xxx_audio_device *adev)
             end_call(adev);
             force_all_standby(adev);
 
-            ALOGD("%s: set voicecall route: voicecall_default_disable", __func__);
-            set_bigroute_by_array(adev->mixer, voicecall_default_disable, 1);
-            ALOGD("%s: set voicecall route: default_input_disable", __func__);
-            set_bigroute_by_array(adev->mixer, default_input_disable, 1);
-            ALOGD("%s: set voicecall route: headset_input_disable", __func__);
-            set_bigroute_by_array(adev->mixer, headset_input_disable, 1);
-            ALOGD("%s: set voicecall route: bt_disable", __func__);
-            set_bigroute_by_array(adev->mixer, bt_disable, 1);
-
             select_output_device(adev);
             //Force Input Standby
             adev->in_device = AUDIO_DEVICE_NONE;
@@ -619,20 +654,6 @@ static void select_mode(struct smdk3xxx_audio_device *adev)
 
 static void select_output_device(struct smdk3xxx_audio_device *adev)
 {
-    int headset_on;
-    int headphone_on;
-    int speaker_on;
-    int earpiece_on;
-    int bt_on;
-    bool tty_volume = false;
-    unsigned int channel;
-
-    headset_on = adev->out_device & AUDIO_DEVICE_OUT_WIRED_HEADSET;
-    headphone_on = adev->out_device & AUDIO_DEVICE_OUT_WIRED_HEADPHONE;
-    speaker_on = adev->out_device & AUDIO_DEVICE_OUT_SPEAKER;
-    earpiece_on = adev->out_device & AUDIO_DEVICE_OUT_EARPIECE;
-    bt_on = adev->out_device & AUDIO_DEVICE_OUT_ALL_SCO;
-
     switch(adev->out_device) {
         case AUDIO_DEVICE_OUT_SPEAKER:
             ALOGD("%s: AUDIO_DEVICE_OUT_SPEAKER", __func__);
@@ -671,63 +692,6 @@ static void select_output_device(struct smdk3xxx_audio_device *adev)
     set_eq_filter(adev);
 
     if (adev->mode == AUDIO_MODE_IN_CALL) {
-        if (!bt_on) {
-            /* force tx path according to TTY mode when in call */
-            switch(adev->tty_mode) {
-                case TTY_MODE_FULL:
-                case TTY_MODE_HCO:
-                    /* tx path from headset mic */
-                    headphone_on = 0;
-                    headset_on = 1;
-                    speaker_on = 0;
-                    earpiece_on = 0;
-                    break;
-                case TTY_MODE_VCO:
-                    /* tx path from device sub mic */
-                    headphone_on = 0;
-                    headset_on = 0;
-                    speaker_on = 1;
-                    earpiece_on = 0;
-                    break;
-                case TTY_MODE_OFF:
-                default:
-                    break;
-            }
-        }
-
-        if (headset_on || headphone_on || speaker_on || earpiece_on) {
-            ALOGD("%s: set voicecall route: voicecall_default", __func__);
-            set_bigroute_by_array(adev->mixer, voicecall_default, 1);
-        } else {
-            ALOGD("%s: set voicecall route: voicecall_default_disable", __func__);
-            set_bigroute_by_array(adev->mixer, voicecall_default_disable, 1);
-        }
-
-        if (speaker_on || earpiece_on || headphone_on) {
-            ALOGD("%s: set voicecall route: default_input", __func__);
-            set_bigroute_by_array(adev->mixer, default_input, 1);
-        } else {
-            ALOGD("%s: set voicecall route: default_input_disable", __func__);
-            set_bigroute_by_array(adev->mixer, default_input_disable, 1);
-        }
-
-        if (headset_on) {
-            ALOGD("%s: set voicecall route: headset_input", __func__);
-            set_bigroute_by_array(adev->mixer, headset_input, 1);
-        } else {
-            ALOGD("%s: set voicecall route: headset_input_disable", __func__);
-            set_bigroute_by_array(adev->mixer, headset_input_disable, 1);
-        }
-
-        if (bt_on) {
-            ALOGD("%s: set voicecall route: bt_input", __func__);
-            set_bigroute_by_array(adev->mixer, bt_input, 1);
-            ALOGD("%s: set voicecall route: bt_output", __func__);
-            set_bigroute_by_array(adev->mixer, bt_output, 1);
-        } else {
-            ALOGD("%s: set voicecall route: bt_disable", __func__);
-            set_bigroute_by_array(adev->mixer, bt_disable, 1);
-        }
         set_incall_device(adev);
     }
 }
@@ -2612,12 +2576,14 @@ static int adev_set_parameters(struct audio_hw_device *dev, const char *kvpairs)
             ALOGE("%s: enabling two mic control", __func__);
             ril_set_two_mic_control(&adev->ril, AUDIENCE, TWO_MIC_SOLUTION_ON);
             /* sub mic */
-            set_bigroute_by_array(adev->mixer, noise_suppression, 1);
+            //FIXME
+            //set_bigroute_by_array(adev->mixer, noise_suppression, 1);
         } else {
             ALOGE("%s: disabling two mic control", __func__);
             ril_set_two_mic_control(&adev->ril, AUDIENCE, TWO_MIC_SOLUTION_OFF);
             /* sub mic */
-            set_bigroute_by_array(adev->mixer, noise_suppression_disable, 1);
+            //FIXME
+            //set_bigroute_by_array(adev->mixer, noise_suppression_disable, 1);
         }
     }
 
@@ -2825,230 +2791,10 @@ static int adev_close(hw_device_t *device)
     /* RIL */
     ril_close(&adev->ril);
 
-    mixer_close(adev->mixer);
+    audio_route_free(adev->ar);
+    
     free(device);
     return 0;
-}
-
-struct config_parse_state {
-    struct smdk3xxx_audio_device *adev;
-    struct smdk3xxx_dev_cfg *dev;
-    bool on;
-
-    struct route_setting *path;
-    unsigned int path_len;
-};
-
-static const struct {
-    int mask;
-    const char *name;
-} dev_names[] = {
-    { AUDIO_DEVICE_OUT_SPEAKER, "speaker" },
-    { AUDIO_DEVICE_OUT_WIRED_HEADSET | AUDIO_DEVICE_OUT_WIRED_HEADPHONE, "headphone" },
-    { AUDIO_DEVICE_OUT_EARPIECE, "earpiece" },
-    { AUDIO_DEVICE_OUT_ANLG_DOCK_HEADSET, "analogue-dock" },
-    { AUDIO_DEVICE_OUT_DGTL_DOCK_HEADSET, "digital-dock" },
-    { AUDIO_DEVICE_OUT_ALL_SCO, "sco-out" },
-    { AUDIO_DEVICE_OUT_AUX_DIGITAL, "aux-digital" },
-
-    { AUDIO_DEVICE_IN_BUILTIN_MIC, "builtin-mic" },
-    { AUDIO_DEVICE_IN_BACK_MIC, "back-mic" },
-    { AUDIO_DEVICE_IN_WIRED_HEADSET, "headset-in" },
-    { AUDIO_DEVICE_IN_ALL_SCO, "sco-in" },
-};
-
-static void adev_config_start(void *data, const XML_Char *elem,
-                  const XML_Char **attr)
-{
-    struct config_parse_state *s = data;
-    struct smdk3xxx_dev_cfg *dev_cfg;
-    const XML_Char *name = NULL;
-    const XML_Char *val = NULL;
-    unsigned int i, j;
-
-    for (i = 0; attr[i]; i += 2) {
-    if (strcmp(attr[i], "name") == 0)
-        name = attr[i + 1];
-
-    if (strcmp(attr[i], "val") == 0)
-        val = attr[i + 1];
-    }
-
-    if (strcmp(elem, "device") == 0) {
-    if (!name) {
-        ALOGE("Unnamed device\n");
-        return;
-    }
-
-    for (i = 0; i < sizeof(dev_names) / sizeof(dev_names[0]); i++) {
-        if (strcmp(dev_names[i].name, name) == 0) {
-        ALOGI("Allocating device %s\n", name);
-        dev_cfg = realloc(s->adev->dev_cfgs,
-                  (s->adev->num_dev_cfgs + 1)
-                  * sizeof(*dev_cfg));
-        if (!dev_cfg) {
-            ALOGE("Unable to allocate dev_cfg\n");
-            return;
-        }
-
-        s->dev = &dev_cfg[s->adev->num_dev_cfgs];
-        memset(s->dev, 0, sizeof(*s->dev));
-        s->dev->mask = dev_names[i].mask;
-
-        s->adev->dev_cfgs = dev_cfg;
-        s->adev->num_dev_cfgs++;
-        }
-    }
-
-    } else if (strcmp(elem, "path") == 0) {
-    if (s->path_len)
-        ALOGW("Nested paths\n");
-
-    /* If this a path for a device it must have a role */
-    if (s->dev) {
-        /* Need to refactor a bit... */
-        if (strcmp(name, "on") == 0) {
-        s->on = true;
-        } else if (strcmp(name, "off") == 0) {
-        s->on = false;
-        } else {
-        ALOGW("Unknown path name %s\n", name);
-        }
-    }
-
-    } else if (strcmp(elem, "ctl") == 0) {
-    struct route_setting *r;
-
-    if (!name) {
-        ALOGE("Unnamed control\n");
-        return;
-    }
-
-    if (!val) {
-        ALOGE("No value specified for %s\n", name);
-        return;
-    }
-
-    ALOGV("Parsing control %s => %s\n", name, val);
-
-    r = realloc(s->path, sizeof(*r) * (s->path_len + 1));
-    if (!r) {
-        ALOGE("Out of memory handling %s => %s\n", name, val);
-        return;
-    }
-
-    r[s->path_len].ctl_name = strdup(name);
-    r[s->path_len].strval = NULL;
-
-    /* This can be fooled but it'll do */
-    r[s->path_len].intval = atoi(val);
-    if (!r[s->path_len].intval && strcmp(val, "0") != 0)
-        r[s->path_len].strval = strdup(val);
-
-    s->path = r;
-    s->path_len++;
-    }
-}
-
-static void adev_config_end(void *data, const XML_Char *name)
-{
-    struct config_parse_state *s = data;
-    unsigned int i;
-
-    if (strcmp(name, "path") == 0) {
-    if (!s->path_len)
-        ALOGW("Empty path\n");
-
-    if (!s->dev) {
-        ALOGV("Applying %d element default route\n", s->path_len);
-
-        set_route_by_array(s->adev->mixer, s->path, s->path_len);
-
-        for (i = 0; i < s->path_len; i++) {
-        free(s->path[i].ctl_name);
-        free(s->path[i].strval);
-        }
-
-        free(s->path);
-
-        /* Refactor! */
-    } else if (s->on) {
-        ALOGV("%d element on sequence\n", s->path_len);
-        s->dev->on = s->path;
-        s->dev->on_len = s->path_len;
-
-    } else {
-        ALOGV("%d element off sequence\n", s->path_len);
-
-        /* Apply it, we'll reenable anything that's wanted later */
-        set_route_by_array(s->adev->mixer, s->path, s->path_len);
-
-        s->dev->off = s->path;
-        s->dev->off_len = s->path_len;
-    }
-
-    s->path_len = 0;
-    s->path = NULL;
-
-    } else if (strcmp(name, "device") == 0) {
-    s->dev = NULL;
-    }
-}
-
-static int adev_config_parse(struct smdk3xxx_audio_device *adev)
-{
-    struct config_parse_state s;
-    FILE *f;
-    XML_Parser p;
-    int ret = 0;
-    bool eof = false;
-    int len;
-    char buf[1024];
-
-    ALOGV("Reading configuration from %s\n", CONFIG_FILE);
-    f = fopen(CONFIG_FILE, "r");
-    if (!f) {
-    ALOGE("Failed to open %s\n", CONFIG_FILE);
-    return -ENODEV;
-    }
-
-    p = XML_ParserCreate(NULL);
-    if (!p) {
-    ALOGE("Failed to create XML parser\n");
-    ret = -ENOMEM;
-    goto out;
-    }
-
-    memset(&s, 0, sizeof(s));
-    s.adev = adev;
-    XML_SetUserData(p, &s);
-
-    XML_SetElementHandler(p, adev_config_start, adev_config_end);
-
-    while (!eof) {
-    len = fread(buf, 1, sizeof(buf), f);
-    if (ferror(f)) {
-        ALOGE("I/O error reading config\n");
-        ret = -EIO;
-        goto out_parser;
-    }
-    eof = feof(f);
-
-    if (XML_Parse(p, buf, len, eof) == XML_STATUS_ERROR) {
-        ALOGE("Parse error at line %u:\n%s\n",
-         (unsigned int)XML_GetCurrentLineNumber(p),
-         XML_ErrorString(XML_GetErrorCode(p)));
-        ret = -EINVAL;
-        goto out_parser;
-    }
-    }
-
- out_parser:
-    XML_ParserFree(p);
- out:
-    fclose(f);
-
-    return ret;
 }
 
 static int adev_open(const hw_module_t* module, const char* name,
@@ -3084,20 +2830,7 @@ static int adev_open(const hw_module_t* module, const char* name,
     adev->hw_device.close_input_stream = adev_close_input_stream;
     adev->hw_device.dump = adev_dump;
 
-    adev->mixer = mixer_open(CARD_DEFAULT);
-    if (!adev->mixer) {
-        free(adev);
-        ALOGE("Unable to open the mixer, aborting.");
-        return -EINVAL;
-    }
-
-    /* +30db boost for mics */
-    adev->mixer_ctls.mixinl_in1l_volume = mixer_get_ctl_by_name(adev->mixer, "MIXINL IN1L Volume");
-    adev->mixer_ctls.mixinl_in2l_volume = mixer_get_ctl_by_name(adev->mixer, "MIXINL IN2L Volume");
-
-    ret = adev_config_parse(adev);
-    if (ret != 0)
-        goto err_mixer;
+    adev->ar = audio_route_init(CARD_DEFAULT, NULL);
 
     /* Set the default route before the PCM stream is opened */
     pthread_mutex_lock(&adev->lock);
@@ -3125,8 +2858,6 @@ static int adev_open(const hw_module_t* module, const char* name,
 
     return 0;
 
-err_mixer:
-    mixer_close(adev->mixer);
 err:
     return -EINVAL;
 }

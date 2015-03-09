@@ -24,10 +24,14 @@ LOCAL_SRC_FILES := audio_hw.c ril_interface.c
 
 LOCAL_C_INCLUDES += \
 	external/tinyalsa/include \
-	external/expat/lib \
 	$(call include-path-for, audio-utils) \
-	$(call include-path-for, audio-effects)
+	$(call include-path-for, audio-effects) \
+	$(call include-path-for, audio-route)
 
-LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libdl libexpat
+LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libaudioroute libdl
+
+ifeq ($(strip $(BOARD_USE_ALP_AUDIO)),true)
+	LOCAL_CFLAGS += -DUSE_ALP_AUDIO
+endif
 
 include $(BUILD_SHARED_LIBRARY)

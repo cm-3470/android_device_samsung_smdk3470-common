@@ -157,6 +157,8 @@ static pthread_t s_tid_dispatch;
 static pthread_t s_tid_reader;
 static int s_started = 0;
 
+static int s_cpCrashed = 0;
+
 static int s_fdListen = -1;
 static int s_fdCommand = -1;
 static int s_fdDebug = -1;
@@ -169,7 +171,6 @@ static struct ril_event s_wakeupfd_event;
 static struct ril_event s_listen_event;
 static struct ril_event s_wake_timeout_event;
 static struct ril_event s_debug_event;
-
 
 static const struct timeval TIMEVAL_WAKE_TIMEOUT = {1,0};
 
@@ -3952,6 +3953,14 @@ void RIL_onUnsolicitedResponse(int unsolResponse, void *data,
                                             &TIMEVAL_WAKE_TIMEOUT);
     }
 
+    if (unsolResponse == RIL_UNSOL_AM) {
+        // "start -a android.intent.action.MAIN -n com.sec.app.RilErrorNotifier/.PhoneCrashNotifier --es title cpcrash"
+        if (strstr((const char*)data, "cpcrash")) {
+            RLOGE("CP crash detected");
+            s_cpCrashed = 1;            
+        }
+    }
+    
     // Normal exit
     return;
 
@@ -3959,6 +3968,14 @@ error_exit:
     if (shouldScheduleTimeout) {
         releaseWakeLock();
     }
+}
+
+extern "C"
+int RIL_getCpCrashed()
+{
+    int result = s_cpCrashed;
+    s_cpCrashed = 0;
+    return result;
 }
 
 /** FIXME generalize this if you track UserCAllbackInfo, clear it

@@ -54,7 +54,7 @@
     {RIL_REQUEST_SMS_ACKNOWLEDGE, dispatchInts, responseVoid},
     {RIL_REQUEST_GET_IMEI, dispatchVoid, responseString},
     {RIL_REQUEST_GET_IMEISV, dispatchVoid, responseString},
-    {RIL_REQUEST_ANSWER,dispatchVoid, responseVoid},
+    {RIL_REQUEST_ANSWER, dispatchInts, responseVoid},
     {RIL_REQUEST_DEACTIVATE_DATA_CALL, dispatchStrings, responseVoid},
     {RIL_REQUEST_QUERY_FACILITY_LOCK, dispatchStrings, responseInts},
     {RIL_REQUEST_SET_FACILITY_LOCK, dispatchStrings, responseInts},
@@ -131,55 +131,86 @@
     {RIL_REQUEST_GET_DATA_CALL_PROFILE, dispatchInts, responseGetDataCallProfile},
     {RIL_REQUEST_SET_UICC_SUBSCRIPTION, dispatchUiccSubscripton, responseVoid},
     {RIL_REQUEST_SET_DATA_SUBSCRIPTION, dispatchVoid, responseVoid},
-    {0, NULL, NULL}, // 10001
-    {RIL_REQUEST_GET_CELL_BROADCAST_CONFIG, dispatchVoid, responseVoid},
-    {0, NULL, NULL}, // 10003
-    {0, NULL, NULL}, // 10004
+
+    /*???*/
+    {RIL_REQUEST_GET_UICC_SUBSCRIPTION, dispatchVoid, responseUiccSubscription},
+    {RIL_REQUEST_GET_DATA_SUBSCRIPTION, dispatchVoid, responseInts},
+    {RIL_REQUEST_SET_TRANSMIT_POWER, dispatchVoid, responseVoid},
+
+#if 0
+    {RIL_REQUEST_SELECT_BAND, dispatchVoid, responseVoid},
+    {RIL_REQUEST_GET_BAND, dispatchVoid, responseInts},
+    {RIL_REQUEST_SET_FDY, dispatchVoid, responseVoid},
+    {RIL_REQUEST_SET_COMCFG, dispatchVoid, responseVoid},
+    {RIL_REQUEST_GET_COMCFG, dispatchVoid, responseInts},
+    {RIL_REQUEST_SWITCH_MODEM, dispatchVoid, responseVoid},
+#endif
+    
+    {10001, NULL, NULL},
+    {RIL_REQUEST_GET_CELL_BROADCAST_CONFIG, dispatchVoid, responseCbSettings},/*???*/
+    {10003, NULL, NULL},
+    {10004, NULL, NULL},
     {RIL_REQUEST_SEND_ENCODED_USSD, dispatchVoid, responseVoid},
     {RIL_REQUEST_SET_PDA_MEMORY_STATUS, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_PHONEBOOK_STORAGE_INFO, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_PHONEBOOK_ENTRY, dispatchVoid, responseVoid},
-    {RIL_REQUEST_ACCESS_PHONEBOOK_ENTRY, dispatchVoid, responseVoid},
+    {RIL_REQUEST_GET_PHONEBOOK_STORAGE_INFO, dispatchVoid, responseInts},/*???*/
+    {RIL_REQUEST_GET_PHONEBOOK_ENTRY, dispatchVoid, responseSIM_PB},/*???*/
+    {RIL_REQUEST_ACCESS_PHONEBOOK_ENTRY, dispatchVoid, responseInts},/*???*/
     {RIL_REQUEST_DIAL_VIDEO_CALL, dispatchVoid, responseVoid},
     {RIL_REQUEST_CALL_DEFLECTION, dispatchVoid, responseVoid},
-    {RIL_REQUEST_READ_SMS_FROM_SIM, dispatchVoid, responseVoid},
-    {RIL_REQUEST_USIM_PB_CAPA, dispatchVoid, responseVoid},
-    {RIL_REQUEST_LOCK_INFO, dispatchVoid, responseVoid},
-    {0, NULL, NULL}, // 10015
+    {10012, NULL, NULL},
+    {RIL_REQUEST_USIM_PB_CAPA, dispatchVoid, responseInts},/*???*/
+    {RIL_REQUEST_LOCK_INFO, dispatchVoid, responseSIM_LockInfo},
+    {10015, NULL, NULL},
     {RIL_REQUEST_DIAL_EMERGENCY, dispatchDial, responseVoid},
-    {RIL_REQUEST_GET_STOREAD_MSG_COUNT, dispatchVoid, responseVoid},
+    {10017, NULL, NULL},
     {RIL_REQUEST_STK_SIM_INIT_EVENT, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_LINE_ID, dispatchVoid, responseVoid},
+    {RIL_REQUEST_GET_LINE_ID, dispatchVoid, responseInts},/*???*/
     {RIL_REQUEST_SET_LINE_ID, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_SERIAL_NUMBER, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_MANUFACTURE_DATE_NUMBER, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_BARCODE_NUMBER, dispatchVoid, responseVoid},
-    {RIL_REQUEST_UICC_GBA_AUTHENTICATE_BOOTSTRAP, dispatchVoid, responseVoid},
-    {RIL_REQUEST_UICC_GBA_AUTHENTICATE_NAF, dispatchVoid, responseVoid},
-    {0, NULL, NULL}, //10026
-    {0, NULL, NULL}, //10027
-    {0, NULL, NULL}, //10028
-    {0, NULL, NULL}, //10029
-    {RIL_REQUEST_SIM_AUTH, dispatchVoid, responseVoid},
-    {RIL_REQUEST_PS_ATTACH, dispatchVoid, responseVoid},
-    {RIL_REQUEST_PS_DETACH, dispatchVoid, responseVoid},
-    {RIL_REQUEST_ACTIVATE_DATA_CALL, dispatchVoid, responseVoid},
-    {RIL_REQUEST_CHANGE_SIM_PERSO, dispatchVoid, responseVoid},
-    {RIL_REQUEST_ENTER_SIM_PERSO, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_TIME_INFO, dispatchVoid, responseVoid},
+    {RIL_REQUEST_GET_SERIAL_NUMBER, dispatchVoid, responseString},/*???*/
+    {RIL_REQUEST_GET_MANUFACTURE_DATE_NUMBER, dispatchVoid, responseString},/*???*/
+    {RIL_REQUEST_GET_BARCODE_NUMBER, dispatchVoid, responseString},/*???*/
+    {RIL_REQUEST_UICC_GBA_AUTHENTICATE_BOOTSTRAP, dispatchVoid, responseBootstrap},
+    {RIL_REQUEST_UICC_GBA_AUTHENTICATE_NAF, dispatchVoid, responseNaf},
+    {10026, NULL, NULL},
+    {10027, NULL, NULL},
+    {10028, NULL, NULL},
+    {10029, NULL, NULL},
+    {10030, NULL, NULL},
+    
+    /*???*/
+    {RIL_REQUEST_MODIFY_CALL_INITIATE, dispatchVoid, responseInts},
+    {RIL_REQUEST_MODIFY_CALL_CONFIRM, dispatchVoid, responseVoid},
+    {RIL_REQUEST_SAFE_MODE, dispatchVoid, responseVoid},
+    {RIL_REQUEST_SET_VOICE_DOMAIN_PREF, dispatchVoid, responseVoid},
+    
+    
+    {RIL_REQUEST_PS_ATTACH, dispatchVoid, responseStrings},/*???*/
+    {RIL_REQUEST_PS_DETACH, dispatchVoid, responseString},/*???*/
+    {RIL_REQUEST_ACTIVATE_DATA_CALL, dispatchVoid, responseStrings},/*???*/
+    {RIL_REQUEST_CHANGE_SIM_PERSO, dispatchVoid, responseInts},/*???*/
+    {RIL_REQUEST_ENTER_SIM_PERSO, dispatchVoid, responseInts},/*???*/
+    {RIL_REQUEST_GET_TIME_INFO, dispatchVoid, responseString},/*???*/
+    
+    /*???*/
+    {RIL_REQUEST_CDMA_SEND_SMS_EXPECT_MORE, dispatchVoid, responseSMS},/*???*/
+    
     {RIL_REQUEST_OMADM_SETUP_SESSION, dispatchVoid, responseVoid},
     {RIL_REQUEST_OMADM_SERVER_START_SESSION, dispatchVoid, responseVoid},
     {RIL_REQUEST_OMADM_CLIENT_START_SESSION, dispatchVoid, responseVoid},
     {RIL_REQUEST_OMADM_SEND_DATA, dispatchVoid, responseVoid},
-    {RIL_REQUEST_CDMA_GET_DATAPROFILE, dispatchVoid, responseVoid},
+    {RIL_REQUEST_CDMA_GET_DATAPROFILE, dispatchVoid, responseInts},/*???*/
     {RIL_REQUEST_CDMA_SET_DATAPROFILE, dispatchVoid, responseVoid},
-    {RIL_REQUEST_CDMA_GET_SYSTEMPROPERTIES, dispatchVoid, responseVoid},
+    {RIL_REQUEST_CDMA_GET_SYSTEMPROPERTIES, dispatchVoid, responseString},/*???*/
     {RIL_REQUEST_CDMA_SET_SYSTEMPROPERTIES, dispatchVoid, responseVoid},
     {RIL_REQUEST_SEND_SMS_COUNT, dispatchVoid, responseVoid},
     {RIL_REQUEST_SEND_SMS_MSG, dispatchVoid, responseVoid},
     {RIL_REQUEST_SEND_SMS_MSG_READ_STATUS, dispatchVoid, responseVoid},
     {RIL_REQUEST_MODEM_HANGUP, dispatchVoid, responseVoid},
-    {RIL_REQUEST_SET_SIM_POWER, dispatchVoid, responseVoid},
+    {RIL_REQUEST_SET_SIM_POWER, dispatchVoid, responseSimPowerDone},/*???*/
     {RIL_REQUEST_SET_PREFERRED_NETWORK_LIST, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_PREFERRED_NETWORK_LIST, dispatchVoid, responseVoid},
+    {RIL_REQUEST_GET_PREFERRED_NETWORK_LIST, dispatchVoid, responsePreferredNetworkList},
     {RIL_REQUEST_HANGUP_VT, dispatchVoid, responseVoid},
+    
+    {RIL_REQUEST_HOLD, dispatchVoid, responseVoid},
+    {RIL_REQUEST_SET_LTE_BAND_MODE, dispatchVoid, responseVoid},
+    {RIL_REQUEST_QUERY_LOCK_NETWORKS, dispatchVoid, responseNetworkInfos},

@@ -114,8 +114,8 @@ namespace android {
     #define appendPrintBuf(x...)
 #endif
 
-#define MAX_RIL_SOL     RIL_REQUEST_SHUTDOWN
-#define MAX_RIL_UNSOL   RIL_UNSOL_ON_SS
+#define MAX_RIL_SOL     RIL_REQUEST_SET_TRANSMIT_POWER
+#define MAX_RIL_UNSOL   RIL_UNSOL_DUN_INFO
 
 enum WakeType {DONT_WAKE, WAKE_PARTIAL};
 
@@ -249,6 +249,33 @@ static int responseSimRefresh(Parcel &p, void *response, size_t responselen);
 static int responseCellInfoList(Parcel &p, void *response, size_t responselen);
 static int responseGetDataCallProfile(Parcel &p, void *response, size_t responselen);
 static int responseSSData(Parcel &p, void *response, size_t responselen);
+
+#if 0
+/* TODO */
+static int responseUiccSubscription(Parcel &p, void *response, size_t responselen) { return 0; }
+static int responseCbSettings(Parcel &p, void *response, size_t responselen) { return 0; }
+static int responseSIM_PB(Parcel &p, void *response, size_t responselen) { return 0; }
+static int responseSIM_LockInfo(Parcel &p, void *response, size_t responselen) { return 0; }
+static int responseBootstrap(Parcel &p, void *response, size_t responselen) { return 0; }
+static int responseNaf(Parcel &p, void *response, size_t responselen) { return 0; }
+static int responseSimPowerDone(Parcel &p, void *response, size_t responselen) { return 0; }
+static int responsePreferredNetworkList(Parcel &p, void *response, size_t responselen) { return 0; }
+static int responseNetworkInfos(Parcel &p, void *response, size_t responselen) { return 0; }
+static int responseSSReleaseCompleteNotification(Parcel &p, void *response, size_t responselen) { return 0; }
+static int responseCallModify(Parcel &p, void *response, size_t responselen) { return 0; }
+#else
+#define responseUiccSubscription responseVoid
+#define responseCbSettings responseVoid
+#define responseSIM_PB responseVoid
+#define responseSIM_LockInfo responseVoid
+#define responseBootstrap responseVoid
+#define responseNaf responseVoid
+#define responseSimPowerDone responseVoid
+#define responsePreferredNetworkList responseVoid
+#define responseNetworkInfos responseVoid
+#define responseSSReleaseCompleteNotification responseVoid
+#define responseCallModify responseVoid
+#endif
 
 static int decodeVoiceRadioTechnology (RIL_RadioState radioState);
 static int decodeCdmaSubscriptionSource (RIL_RadioState radioState);
@@ -402,7 +429,7 @@ processCommandBuffer(void *buffer, size_t buflen) {
     /* Hack to include Samsung requests */
     if (request < 1 || ((request > MAX_RIL_SOL) &&
             (request < RIL_REQUEST_GET_CELL_BROADCAST_CONFIG)) ||
-            request > RIL_REQUEST_HANGUP_VT) {
+            request > RIL_REQUEST_QUERY_LOCK_NETWORKS) {
         RLOGE("unsupported request code %d token %d", request, token);
         // FIXME this should perhaps return a response
         return 0;

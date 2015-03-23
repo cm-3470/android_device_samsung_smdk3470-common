@@ -20,20 +20,17 @@ import static com.android.internal.telephony.RILConstants.*;
 
 import android.content.Context;
 import android.media.AudioManager;
+import android.telephony.Rlog;
 import android.os.Message;
 import android.os.Parcel;
-import android.telephony.Rlog;
-
-import android.telephony.SignalStrength;
-
 import android.telephony.PhoneNumberUtils;
+import android.telephony.SignalStrength;
+import com.android.internal.telephony.uicc.IccCardApplicationStatus;
+import com.android.internal.telephony.uicc.IccCardStatus;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-
-import com.android.internal.telephony.uicc.IccCardApplicationStatus;
-import com.android.internal.telephony.uicc.IccCardStatus;
 
 /**
  * RIL customization for Exynos3470 based devices.
@@ -51,13 +48,12 @@ public class Exynos3470RIL extends RIL {
     private static final int RIL_UNSOL_DATA_SUSPEND_RESUME = 11012;
     private static final int RIL_UNSOL_WB_AMR_STATE = 11017;
     private static final int RIL_UNSOL_PCMCLOCK_STATE = 11022;
+    private static final int RIL_UNSOL_SRVCC_HANDOVER = 11029;
 
     private AudioManager mAudioManager;
-    private Message mPendingGetSimStatus;
 
     public Exynos3470RIL(Context context, int networkMode, int cdmaSubscription) {
-        super(context, networkMode, cdmaSubscription, null);
-        mQANElements = 6;
+        this(context, networkMode, cdmaSubscription, null);
     }
 
     public Exynos3470RIL(Context context, int preferredNetworkType,
@@ -216,6 +212,9 @@ public class Exynos3470RIL extends RIL {
             case RIL_UNSOL_STK_CALL_CONTROL_RESULT:
                 ret = responseVoid(p);
                 break;
+            case RIL_UNSOL_RESPONSE_IMS_NETWORK_STATE_CHANGED:
+                ret = responseVoid(p);
+                break;
             case RIL_UNSOL_DEVICE_READY_NOTI:
                 ret = responseVoid(p);
                 break;
@@ -223,7 +222,7 @@ public class Exynos3470RIL extends RIL {
                 ret = responseString(p);
                 String amString = (String) ret;
                 Rlog.d(RILJ_LOG_TAG, "Executing AM: " + amString);
-
+                
                 try {
                     Runtime.getRuntime().exec("am " + amString);
                 } catch (IOException e) {
@@ -238,6 +237,9 @@ public class Exynos3470RIL extends RIL {
                 ret = responseInts(p);
                 setWbAmr(((int[])ret)[0]);
                 break;
+            case RIL_UNSOL_SRVCC_HANDOVER:
+                ret = responseVoid(p);
+                break;
             case RIL_UNSOL_PCMCLOCK_STATE:
                 ret = responseInts(p);
                 break;
@@ -249,23 +251,8 @@ public class Exynos3470RIL extends RIL {
                 super.processUnsolicited(p);
                 return;
         }
-
     }
-
-    // handle exceptions
-    private Object
-    responseDataRegistrationState(Parcel p) {
-        String response[] = (String[])responseStrings(p);
-        try {
-            int tech = Integer.parseInt(response[3]);
-            if (tech>=100) tech -= 100;
-            response[3] = Integer.toString(tech);
-        } catch(NumberFormatException e) {
-            response[3] = "2";
-        }
-        return response;
-    }
-
+    
     /**
      * Set audio parameter "wb_amr" for HD-Voice (Wideband AMR).
      *
@@ -274,23 +261,28 @@ public class Exynos3470RIL extends RIL {
     private void setWbAmr(int state) {
         if (state == 1) {
             Rlog.d(RILJ_LOG_TAG, "setWbAmr(): setting audio parameter - wb_amr=on");
-            mAudioManager.setParameters("wide_voice_enable=true");
+            mAudioManager.setParameters("wb_amr=on");
         }else if (state == 0) {
             Rlog.d(RILJ_LOG_TAG, "setWbAmr(): setting audio parameter - wb_amr=off");
-            mAudioManager.setParameters("wide_voice_enable=false");
+            mAudioManager.setParameters("wb_amr=off");
         }
     }
 
     @Override
     public void
     dial(String address, int clirMode, UUSInfo uusInfo, Message result) {
+        if (PhoneNumberUtils.isEmergencyNumber(address)) {
+            dialEmergencyCall(address, clirMode, result);
+            return;
+        }
+
         RILRequest rr = RILRequest.obtain(RIL_REQUEST_DIAL, result);
 
         rr.mParcel.writeString(address);
         rr.mParcel.writeInt(clirMode);
-        rr.mParcel.writeInt(0);
-        rr.mParcel.writeInt(1);
-        rr.mParcel.writeString("");
+        rr.mParcel.writeInt(0);     // CallDetails.call_type
+        rr.mParcel.writeInt(1);     // CallDetails.call_domain
+        rr.mParcel.writeString(""); // CallDetails.getCsvFromExtras
 
         if (uusInfo == null) {
             rr.mParcel.writeInt(0); // UUS information is absent
@@ -320,6 +312,18 @@ public class Exynos3470RIL extends RIL {
 
         if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
 
+        send(rr);
+    }
+
+    @Override
+    public void
+    acceptCall (Message result) {
+        RILRequest rr
+                = RILRequest.obtain(RIL_REQUEST_ANSWER, result);
+
+        if (RILJ_LOGD) riljLog(rr.serialString() + "> " + requestToString(rr.mRequest));
+        rr.mParcel.writeInt(1);
+        rr.mParcel.writeInt(0);
         send(rr);
     }
 }

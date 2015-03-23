@@ -29,7 +29,7 @@ LOCAL_C_INCLUDES += \
 	$(call include-path-for, audio-utils) \
 	$(call include-path-for, audio-route)
 
-LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libaudioroute libdl
+LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libaudioroute libdl libhardware
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -38,10 +38,38 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := mixer_paths.xml
-LOCAL_MODULE_TAGS := optional eng
+LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE_CLASS := ETC
 
 LOCAL_SRC_FILES := mixer_paths.xml
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
+
+include $(BUILD_PREBUILT)
+
+
+# tinyucm configuration
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := tinyucm.conf
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_CLASS := ETC
+
+LOCAL_SRC_FILES := tinyucm.conf
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
+
+include $(BUILD_PREBUILT)
+
+
+# default_gain.conf
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := default_gain.conf
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_CLASS := ETC
+
+LOCAL_SRC_FILES := default_gain.conf
 
 LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
 

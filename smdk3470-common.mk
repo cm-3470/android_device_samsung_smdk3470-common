@@ -25,8 +25,14 @@ PRODUCT_PACKAGES := \
     audio.r_submix.default \
     audio.usb.default
 
-PRODUCT_COPY_FILES += \
-    $(COMMON_PATH)/audio/mixer_paths.xml:system/etc/mixer_paths.xml
+# needed by open-source audio-hal
+PRODUCT_PACKAGES += \
+    mixer_paths.xml
+
+# needed by stock audio-hal
+PRODUCT_PACKAGES += \
+    default_gain.conf \
+    tinyucm.conf
 
 # HW composer
 PRODUCT_PACKAGES += \

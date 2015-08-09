@@ -27,6 +27,7 @@ TARGET_ARCH := arm
 TARGET_ARCH_VARIANT := armv7-a-neon
 TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
+TARGET_CPU_SMP := true
 TARGET_CPU_VARIANT := cortex-a7
 ARCH_ARM_HAVE_TLS_REGISTER := true
 
@@ -38,9 +39,6 @@ TARGET_NO_BOOTLOADER := true
 BOARD_FLASH_BLOCK_SIZE := 131072
 BOARD_CACHEIMAGE_FILE_SYSTEM_TYPE := ext4
 TARGET_USERIMAGES_USE_EXT4 := true
-
-# Include path
-TARGET_SPECIFIC_HEADER_PATH += device/samsung/smdk3470-common/include
 
 # Kernel
 BOARD_KERNEL_BASE := 0x10000000
@@ -59,17 +57,8 @@ BOARD_BLUEDROID_VENDOR_CONF := device/samsung/smdk3470-common/bluetooth/vnd_smdk
 USE_OPENGL_RENDERER := true
 BOARD_EGL_CFG := device/samsung/smdk3470-common/egl/egl.cfg
 
-# Pre-L Compatibility
-COMMON_GLOBAL_CFLAGS += \
-    -DADD_LEGACY_ACQUIRE_BUFFER_SYMBOL \
-    -DENABLE_NON_PIE_SUPPORT
-
-# Legacy MMAP for pre-lollipop blobs
-# (needed by mcDriverDaemon which in turn is needed by cbd)
-BOARD_USES_LEGACY_MMAP := true
-
-# Media
-COMMON_GLOBAL_CFLAGS += -DADD_LEGACY_ACQUIRE_BUFFER_SYMBOL # acquire_buffer symbol for libwvm.so
+# Recovery
+BOARD_HAS_NO_SELECT_BUTTON := true
 
 # WFD
 BOARD_USES_WFD_SERVICE := true

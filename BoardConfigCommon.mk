@@ -58,6 +58,7 @@ USE_OPENGL_RENDERER := true
 BOARD_EGL_CFG := device/samsung/smdk3470-common/egl/egl.cfg
 
 # Recovery
+TARGET_RECOVERY_LCD_BACKLIGHT_PATH := \"/sys/devices/platform/s5p-mipi-dsim.0/backlight/panel/brightness\"
 BOARD_HAS_NO_SELECT_BUTTON := true
 
 # WFD

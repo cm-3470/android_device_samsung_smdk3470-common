@@ -22,6 +22,7 @@
 
 #include <utils/Log.h>
 #include <cutils/properties.h>
+#include <errno.h>
 
 #include "ril_interface.h"
 

@@ -222,6 +222,7 @@ static void dispatchCdmaBrSmsCnf(Parcel &p, RequestInfo *pRI);
 static void dispatchRilCdmaSmsWriteArgs(Parcel &p, RequestInfo *pRI);
 static void dispatchUiccSubscripton(Parcel &p, RequestInfo *pRI);
 static int responseInts(Parcel &p, void *response, size_t responselen);
+static int responseFailCause(Parcel &p, void *response, size_t responselen);
 static int responseIntsGetPreferredNetworkType(Parcel &p, void *response, size_t responselen);
 static int responseStrings(Parcel &p, void *response, size_t responselen);
 static int responseStringsNetworks(Parcel &p, void *response, size_t responselen);

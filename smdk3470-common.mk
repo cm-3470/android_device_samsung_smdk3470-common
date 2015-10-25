@@ -77,6 +77,10 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
     frameworks/native/data/etc/handheld_core_hardware.xml:system/etc/permissions/handheld_core_hardware.xml
 
+# libstlport
+PRODUCT_PACKAGES += \
+    libstlport 
+
 # RIL
 PRODUCT_PACKAGES += \
     libsecril-client

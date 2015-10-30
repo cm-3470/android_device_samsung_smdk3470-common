@@ -25,6 +25,10 @@ PRODUCT_PACKAGES := \
     audio.r_submix.default \
     audio.usb.default
 
+# Sound
+PRODUCT_PACKAGES += \
+    sound_trigger.primary.universal3470
+
 # needed by open-source audio-hal
 PRODUCT_PACKAGES += \
     mixer_paths.xml

@@ -94,11 +94,11 @@ public class Exynos3470RIL extends RIL {
             appStatus.pin1_replaced  = p.readInt();
             appStatus.pin1           = appStatus.PinStateFromRILInt(p.readInt());
             appStatus.pin2           = appStatus.PinStateFromRILInt(p.readInt());
-            p.readInt(); // remaining_count_pin1 - pin1_num_retries
-            p.readInt(); // remaining_count_puk1 - puk1_num_retries
-            p.readInt(); // remaining_count_pin2 - pin2_num_retries
-            p.readInt(); // remaining_count_puk2 - puk2_num_retries
-            p.readInt(); // - perso_unblock_retries
+            //p.readInt(); // remaining_count_pin1 - pin1_num_retries
+            //p.readInt(); // remaining_count_puk1 - puk1_num_retries
+            //p.readInt(); // remaining_count_pin2 - pin2_num_retries
+            //p.readInt(); // remaining_count_puk2 - puk2_num_retries
+            //p.readInt(); // - perso_unblock_retries
             cardStatus.mApplications[i] = appStatus;
         }
         return cardStatus;
@@ -146,16 +146,16 @@ public class Exynos3470RIL extends RIL {
             dc.isMT = (0 != p.readInt());
             dc.als = p.readInt();
             dc.isVoice = (0 != p.readInt());
-            boolean isVideo = (0 != p.readInt());   // Samsung CallDetails
-            int call_type = p.readInt();            // Samsung CallDetails
-            int call_domain = p.readInt();          // Samsung CallDetails
-            String csv = p.readString();            // Samsung CallDetails
+            //boolean isVideo = (0 != p.readInt());   // Samsung CallDetails
+            //int call_type = p.readInt();            // Samsung CallDetails
+            //int call_domain = p.readInt();          // Samsung CallDetails
+            //String csv = p.readString();            // Samsung CallDetails
             dc.isVoicePrivacy = (0 != p.readInt());
             dc.number = p.readString();
             int np = p.readInt();
             dc.numberPresentation = DriverCall.presentationFromCLIP(np);
             dc.name = p.readString();
-            dc.namePresentation = p.readInt();
+            dc.namePresentation = DriverCall.presentationFromCLIP(p.readInt());
             int uusInfoPresent = p.readInt();
             if (uusInfoPresent == 1) {
                 dc.uusInfo = new UUSInfo();

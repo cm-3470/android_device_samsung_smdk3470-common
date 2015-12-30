@@ -82,6 +82,9 @@ BOARD_MODEM_TYPE := ss222
 # Radio
 BOARD_RIL_CLASS := ../../../device/samsung/smdk3470-common/ril
 
+# Sensors
+TARGET_NO_SENSOR_PERMISSION_CHECK := true
+
 # WFD
 BOARD_USES_WFD_SERVICE := true
 

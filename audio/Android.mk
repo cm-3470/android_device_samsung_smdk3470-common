@@ -14,6 +14,8 @@
 
 LOCAL_PATH := $(call my-dir)
 
+ifneq ($(filter true,$(TARGET_COMMON_EXYNOS3_AUDIO_FROM_SOURCE)),)
+
 # Audio HAL
 include $(CLEAR_VARS)
 
@@ -74,3 +76,5 @@ LOCAL_SRC_FILES := default_gain.conf
 LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
 
 include $(BUILD_PREBUILT)
+
+endif

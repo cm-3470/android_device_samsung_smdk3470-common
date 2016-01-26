@@ -53,10 +53,6 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     SamsungServiceMode
 
-# Snap camera (for higher quality pictures than Camera2 and SD card support)
-PRODUCT_PACKAGES += \
-    Snap
-
 # Wifi
 PRODUCT_PACKAGES += \
     dhcpcd.conf \

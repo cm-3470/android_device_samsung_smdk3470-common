@@ -53,6 +53,10 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     SamsungServiceMode
 
+# Camera
+PRODUCT_PACKAGES += \
+    Snap
+
 # Wifi
 PRODUCT_PACKAGES += \
     dhcpcd.conf \

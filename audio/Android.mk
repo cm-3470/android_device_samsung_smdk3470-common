@@ -14,9 +14,9 @@
 
 LOCAL_PATH := $(call my-dir)
 
-ifneq ($(filter true,$(TARGET_COMMON_EXYNOS3_AUDIO_FROM_SOURCE)),)
+ifneq ($(TARGET_EXYNOS3_AUDIO_FROM_SOURCE),true)
 
-# Audio HAL
+# Audio HAL Wrapper
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := audio.primary.$(TARGET_BOOTLOADER_BOARD_NAME)
@@ -34,6 +34,21 @@ LOCAL_C_INCLUDES += \
 LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libaudioroute libdl libhardware
 
 include $(BUILD_SHARED_LIBRARY)
+
+
+# Stock Audio HAL
+include $(CLEAR_VARS)
+
+PROPRIETARY_PATH := ../../../../vendor/samsung/$(TARGET_DEVICE)/proprietary
+
+LOCAL_MODULE		:= audio.vendor.universal3470
+LOCAL_MODULE_TAGS	:= optional
+LOCAL_MODULE_SUFFIX 	:= .so
+LOCAL_SRC_FILES		:= $(PROPRIETARY_PATH)/lib/hw/audio.primary.universal3470.so
+LOCAL_MODULE_CLASS 	:= SHARED_LIBRARIES
+LOCAL_MODULE_PATH	:= $(TARGET_OUT_SHARED_LIBRARIES)/hw
+
+include $(BUILD_PREBUILT)
 
 
 # Mixer configurations

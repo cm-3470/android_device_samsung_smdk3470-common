@@ -62,18 +62,6 @@ BOARD_BLUEDROID_VENDOR_CONF := device/samsung/smdk3470-common/bluetooth/vnd_smdk
 USE_OPENGL_RENDERER := true
 BOARD_EGL_CFG := device/samsung/smdk3470-common/egl/egl.cfg
 
-# Pre-L Compatibility
-COMMON_GLOBAL_CFLAGS += \
-    -DADD_LEGACY_ACQUIRE_BUFFER_SYMBOL \
-    -DENABLE_NON_PIE_SUPPORT
-
-# Legacy MMAP for pre-lollipop blobs
-# (needed by mcDriverDaemon which in turn is needed by cbd)
-BOARD_USES_LEGACY_MMAP := true
-
-# Media
-COMMON_GLOBAL_CFLAGS += -DADD_LEGACY_ACQUIRE_BUFFER_SYMBOL # acquire_buffer symbol for libwvm.so
-
 # RIL
 BOARD_PROVIDES_LIBRIL := true
 BOARD_MOBILEDATA_INTERFACE_NAME := "rmnet0"

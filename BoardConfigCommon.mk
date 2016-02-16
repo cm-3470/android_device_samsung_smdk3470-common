@@ -70,7 +70,7 @@ BOARD_MODEM_TYPE := ss222
 # Radio
 BOARD_RIL_CLASS := ../../../device/samsung/smdk3470-common/ril
 
-# Sensors
+# Sensors (libgui crashes otherwise if SENSOR_PERMISSION_BODY_SENSORS is defined by a sensor)
 TARGET_NO_SENSOR_PERMISSION_CHECK := true
 
 # WFD

@@ -41,12 +41,27 @@ include $(CLEAR_VARS)
 
 PROPRIETARY_PATH := ../../../../vendor/samsung/$(TARGET_DEVICE)/proprietary
 
+ifeq ($(TARGET_DEVICE),kminilte)
+
 LOCAL_MODULE		:= audio.vendor.universal3470
 LOCAL_MODULE_TAGS	:= optional
 LOCAL_MODULE_SUFFIX 	:= .so
 LOCAL_SRC_FILES		:= $(PROPRIETARY_PATH)/lib/hw/audio.primary.universal3470.so
 LOCAL_MODULE_CLASS 	:= SHARED_LIBRARIES
 LOCAL_MODULE_PATH	:= $(TARGET_OUT_SHARED_LIBRARIES)/hw
+
+endif
+
+ifeq ($(TARGET_DEVICE),degaslte)
+
+LOCAL_MODULE		:= audio.vendor.universal3470
+LOCAL_MODULE_TAGS	:= optional
+LOCAL_MODULE_SUFFIX 	:= .so
+LOCAL_SRC_FILES		:= $(PROPRIETARY_PATH)/lib/hw/audio.vendor.universal3470.so
+LOCAL_MODULE_CLASS 	:= SHARED_LIBRARIES
+LOCAL_MODULE_PATH	:= $(TARGET_OUT_SHARED_LIBRARIES)/hw
+
+endif
 
 include $(BUILD_PREBUILT)
 

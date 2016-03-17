@@ -37,7 +37,7 @@ index c5e1c5e..c2955bf 100644
 -ifneq ($(filter m7450 mdm9x35 ss333 xmm7260,$(BOARD_MODEM_TYPE)),)
 +ifneq ($(filter m7450 mdm9x35 ss222 ss333 xmm7260,$(BOARD_MODEM_TYPE)),)
  LOCAL_CFLAGS := -DSAMSUNG_NEXT_GEN_MODEM
-+ifneq ($(BOARD_MODEM_TYPE),ss222)
++ifeq ($(BOARD_MODEM_TYPE),ss222)
 +LOCAL_CFLAGS += -DNEEDS_VIDEO_CALL_FIELD
 +endif
  endif

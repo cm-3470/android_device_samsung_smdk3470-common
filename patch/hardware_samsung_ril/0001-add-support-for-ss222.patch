@@ -1,6 +1,4 @@
-From 76ff081cefcc057ea8c9ae2f174f23c2bf6fd247 Mon Sep 17 00:00:00 2001
-From: tobigun <hennymcc@yahoo.de>
-Date: Sun, 21 Feb 2016 21:58:12 +0100
+From 05d7c3e5300b70fcec7204d0ca2e3055aeb55fd7 Mon Sep 17 00:00:00 2001
 From: CTXz <ctx.xda@gmail.com>
 Date: Fri, 11 Mar 2016 22:00:57 +0100
 Subject: [PATCH] ril: add support for ss222 (G800F/Y/M)
@@ -8,10 +6,10 @@ Subject: [PATCH] ril: add support for ss222 (G800F/Y/M)
 Change-Id: I818eb8169aa3f1e1a5a9ed47eb4e58b95dd23ea6
 ---
  ril/Android.mk                  |  2 +-
- ril/libril/Android.mk           |  5 ++++-
- ril/libril/ril.cpp              | 20 +++++++++++++++++++-
- ril/libsecril-client/Android.mk |  3 +++
- 4 files changed, 27 insertions(+), 3 deletions(-)
+ ril/libril/Android.mk           |  4 ++--
+ ril/libril/ril.cpp              | 18 ++++++++++++++++++
+ ril/libsecril-client/Android.mk |  5 +++++
+ 4 files changed, 26 insertions(+), 3 deletions(-)
 
 diff --git a/ril/Android.mk b/ril/Android.mk
 index 6ed67a3..6cab57c 100644
@@ -27,23 +25,23 @@ index 6ed67a3..6cab57c 100644
  endif
  endif
 diff --git a/ril/libril/Android.mk b/ril/libril/Android.mk
-index c5e1c5e..c2955bf 100644
+index c5e1c5e..4f0b686 100644
 --- a/ril/libril/Android.mk
 +++ b/ril/libril/Android.mk
-@@ -28,8 +28,11 @@ endif
+@@ -28,11 +28,11 @@ endif
  ifeq ($(BOARD_MODEM_TYPE),xmm6260)
  LOCAL_CFLAGS := -DMODEM_TYPE_XMM6260
  endif
 -ifneq ($(filter m7450 mdm9x35 ss333 xmm7260,$(BOARD_MODEM_TYPE)),)
 +ifneq ($(filter m7450 mdm9x35 ss222 ss333 xmm7260,$(BOARD_MODEM_TYPE)),)
  LOCAL_CFLAGS := -DSAMSUNG_NEXT_GEN_MODEM
-+ifeq ($(BOARD_MODEM_TYPE),ss222)
-+LOCAL_CFLAGS += -DNEEDS_VIDEO_CALL_FIELD
-+endif
  endif
  
- ifneq ($(filter m7450 xmm7260,$(BOARD_MODEM_TYPE)),)
-
+-ifneq ($(filter m7450 xmm7260,$(BOARD_MODEM_TYPE)),)
++ifneq ($(filter m7450 ss222 xmm7260,$(BOARD_MODEM_TYPE)),)
+ LOCAL_CFLAGS += -DNEEDS_VIDEO_CALL_FIELD
+ endif
+ 
 diff --git a/ril/libril/ril.cpp b/ril/libril/ril.cpp
 index 888ee48..7cf5e0f 100644
 --- a/ril/libril/ril.cpp
@@ -87,7 +85,6 @@ index 888ee48..7cf5e0f 100644
  /** FIXME generalize this if you track UserCAllbackInfo, clear it
      when the callback occurs
  */
-
 diff --git a/ril/libsecril-client/Android.mk b/ril/libsecril-client/Android.mk
 index 69a2f11..2c8e70b 100755
 --- a/ril/libsecril-client/Android.mk
@@ -104,7 +101,6 @@ index 69a2f11..2c8e70b 100755
  ifneq ($(filter m7450 mdm9x35 ss333 xmm7260,$(BOARD_MODEM_TYPE)),)
  LOCAL_CFLAGS += -DSAMSUNG_NEXT_GEN_MODEM
  endif
-
 -- 
 1.9.1
 

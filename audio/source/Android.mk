@@ -32,10 +32,9 @@ LOCAL_C_INCLUDES += \
 LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libaudioroute libdl
 
 include $(BUILD_SHARED_LIBRARY)
-
-
 # Mixer configurations
 include $(CLEAR_VARS)
+
 
 LOCAL_MODULE := mixer_paths.xml
 LOCAL_MODULE_TAGS := optional eng

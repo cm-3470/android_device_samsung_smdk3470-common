@@ -14,82 +14,11 @@
 
 LOCAL_PATH := $(call my-dir)
 
-ifneq ($(TARGET_EXYNOS3_AUDIO_FROM_SOURCE),true)
-
-# Audio HAL Wrapper
-include $(CLEAR_VARS)
-
-LOCAL_MODULE := audio.primary.$(TARGET_BOOTLOADER_BOARD_NAME)
-LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
-LOCAL_MODULE_TAGS := optional
-
-LOCAL_SRC_FILES := audio_hw.c ril_interface.c
-
-LOCAL_C_INCLUDES += \
-	external/tinyalsa/include \
-	$(call include-path-for, audio-effects) \
-	$(call include-path-for, audio-utils) \
-	$(call include-path-for, audio-route)
-
-LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libaudioroute libdl libhardware
-
-include $(BUILD_SHARED_LIBRARY)
-
-
-# Stock Audio HAL
-include $(CLEAR_VARS)
-
-PROPRIETARY_PATH := ../../../../vendor/samsung/$(TARGET_DEVICE)/proprietary
-
-LOCAL_MODULE		:= audio.vendor.universal3470
-LOCAL_MODULE_TAGS	:= optional
-LOCAL_MODULE_SUFFIX 	:= .so
-LOCAL_SRC_FILES		:= $(PROPRIETARY_PATH)/lib/hw/audio.primary.universal3470.so
-LOCAL_MODULE_CLASS 	:= SHARED_LIBRARIES
-LOCAL_MODULE_PATH	:= $(TARGET_OUT_SHARED_LIBRARIES)/hw
-
-include $(BUILD_PREBUILT)
-
-
-# Mixer configurations
-include $(CLEAR_VARS)
-
-LOCAL_MODULE := mixer_paths.xml
-LOCAL_MODULE_TAGS := optional
-LOCAL_MODULE_CLASS := ETC
-
-LOCAL_SRC_FILES := mixer_paths.xml
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
-
-include $(BUILD_PREBUILT)
-
-
-# tinyucm configuration
-include $(CLEAR_VARS)
-
-LOCAL_MODULE := tinyucm.conf
-LOCAL_MODULE_TAGS := optional
-LOCAL_MODULE_CLASS := ETC
-
-LOCAL_SRC_FILES := tinyucm.conf
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
-
-include $(BUILD_PREBUILT)
-
-
-# default_gain.conf
-include $(CLEAR_VARS)
-
-LOCAL_MODULE := default_gain.conf
-LOCAL_MODULE_TAGS := optional
-LOCAL_MODULE_CLASS := ETC
-
-LOCAL_SRC_FILES := default_gain.conf
-
-LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
-
-include $(BUILD_PREBUILT)
-
+ifeq ($(TARGET_EXYNOS3_AUDIO_FROM_SOURCE),true)
+audio_dirs := source
+else
+audio_dirs := wrapper
 endif
+
+include $(call all-named-subdir-makefiles,$(audio_dirs))
+

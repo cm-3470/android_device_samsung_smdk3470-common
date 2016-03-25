@@ -1,4 +1,4 @@
-From 64e5e2d39171f59c763790a6a4efa744c94e1e7d Mon Sep 17 00:00:00 2001
+From 4d605c46597dbf1768ce805a1679591c98ea988b Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Mon, 26 Oct 2015 01:17:48 +0100
 Subject: [PATCH] av: Add samsung wfd service
@@ -12,7 +12,7 @@ Change-Id: I5bec41c27678f537f1b2c7207d8e93d188a28784
  media/libmedia/IWFDService.cpp        | 166 ++++++++++++++++++++++++++++++++++
  media/libmedia/WFDService.cpp         |  75 +++++++++++++++
  media/libmedia/WFDServiceListener.cpp |  46 ++++++++++
- 8 files changed, 492 insertions(+)
+ 7 files changed, 475 insertions(+)
  create mode 100644 include/media/IWFDService.h
  create mode 100644 include/media/WFDService.h
  create mode 100644 include/media/WFDServiceListener.h
@@ -237,9 +237,9 @@ index 74e4eb1..a34f731 100644
  
  #QTI Resampler
  ifeq ($(call is-vendor-board-platform,QCOM), true)
- diff --git a/media/libmedia/IWFDService.cpp b/media/libmedia/IWFDService.cpp
+diff --git a/media/libmedia/IWFDService.cpp b/media/libmedia/IWFDService.cpp
 new file mode 100644
-index 0000000..f27be42
+index 0000000..923c8f6
 --- /dev/null
 +++ b/media/libmedia/IWFDService.cpp
 @@ -0,0 +1,166 @@
@@ -311,7 +311,7 @@ index 0000000..f27be42
 +                        const sp<IWFDServiceListener> &listener) {
 +        Parcel data, reply;
 +        data.writeInterfaceToken(BpWFDService::getInterfaceDescriptor());
-+        data.writeStrongBinder(listener->asBinder());
++        data.writeStrongBinder(IInterface::asBinder(listener));
 +        remote()->transact(WFD_ADD_LISTENER, data, &reply);
 +        return reply.readInt32();
 +    }
@@ -320,7 +320,7 @@ index 0000000..f27be42
 +                        const sp<IWFDServiceListener> &listener) {
 +        Parcel data, reply;
 +        data.writeInterfaceToken(BpWFDService::getInterfaceDescriptor());
-+        data.writeStrongBinder(listener->asBinder());
++        data.writeStrongBinder(IInterface::asBinder(listener));
 +        remote()->transact(WFD_REMOVE_LISTENER, data, &reply);
 +        return reply.readInt32();
 +    }

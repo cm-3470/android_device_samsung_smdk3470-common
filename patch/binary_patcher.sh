@@ -22,12 +22,12 @@ for device in kminilte degaslte; do
     replace_all 'SensorManager' 'SensorMgrComp' ${VENDOR_DIR}/bin/gpsd
     # CRYPTO_malloc is now OPENSSL_malloc in BoringSSL which maps to a simple malloc
     replace_all 'CRYPTO_malloc' 'malloc\0\0\0\0\0\0\0' ${VENDOR_DIR}/bin/gpsd
-
-    # Do NOT export libsec-ril's Google Protobuffer implementation.
+    
+    # Do NOT import libsec-ril.so to avoid importing libsec-ril's Google Protobuffer implementation.
     # CM-13 comes with version 2.6.0, libsec-ril with the old (and imcompatible) version 2.3.0.
-    # When the symbols are exported, gles_trace will crash with a Protobuffer version mismatch 
+    # When the symbols are exported, gpsd will crash loading libGLES_trace.so with a Protobuffer version mismatch 
     # error, as it erroneously uses the libsec-ril Protobuffer implementation instead of the CM-13 one.
-    replace_all 'google8protobuf' 'gxxgle8protobuf' ${VENDOR_DIR}/lib/libsec-ril.so
+    replace_all 'libsec-ril.so' 'libril.so\0\0\0\0' ${VENDOR_DIR}/lib/libwrappergps.so
 
     # LP camera hal has a reference to libion.so, although it is not using it.
     # libexynoscamera.so wants to use ion_alloc()/... of libion_exynos.so but as 

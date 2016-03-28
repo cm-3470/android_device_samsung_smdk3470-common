@@ -1,4 +1,4 @@
-From 05d7c3e5300b70fcec7204d0ca2e3055aeb55fd7 Mon Sep 17 00:00:00 2001
+From db14924888e126db8117c88f039ef9ae5257727d Mon Sep 17 00:00:00 2001
 From: CTXz <ctx.xda@gmail.com>
 Date: Fri, 11 Mar 2016 22:00:57 +0100
 Subject: [PATCH] ril: add support for ss222 (G800F/Y/M)
@@ -6,10 +6,10 @@ Subject: [PATCH] ril: add support for ss222 (G800F/Y/M)
 Change-Id: I818eb8169aa3f1e1a5a9ed47eb4e58b95dd23ea6
 ---
  ril/Android.mk                  |  2 +-
- ril/libril/Android.mk           |  4 ++--
+ ril/libril/Android.mk           |  2 +-
  ril/libril/ril.cpp              | 18 ++++++++++++++++++
  ril/libsecril-client/Android.mk |  5 +++++
- 4 files changed, 26 insertions(+), 3 deletions(-)
+ 4 files changed, 25 insertions(+), 2 deletions(-)
 
 diff --git a/ril/Android.mk b/ril/Android.mk
 index 6ed67a3..6cab57c 100644
@@ -25,21 +25,16 @@ index 6ed67a3..6cab57c 100644
  endif
  endif
 diff --git a/ril/libril/Android.mk b/ril/libril/Android.mk
-index c5e1c5e..4f0b686 100644
+index c5e1c5e..8329a72 100644
 --- a/ril/libril/Android.mk
 +++ b/ril/libril/Android.mk
-@@ -28,11 +28,11 @@ endif
+@@ -28,7 +28,7 @@ endif
  ifeq ($(BOARD_MODEM_TYPE),xmm6260)
  LOCAL_CFLAGS := -DMODEM_TYPE_XMM6260
  endif
 -ifneq ($(filter m7450 mdm9x35 ss333 xmm7260,$(BOARD_MODEM_TYPE)),)
 +ifneq ($(filter m7450 mdm9x35 ss222 ss333 xmm7260,$(BOARD_MODEM_TYPE)),)
  LOCAL_CFLAGS := -DSAMSUNG_NEXT_GEN_MODEM
- endif
- 
--ifneq ($(filter m7450 xmm7260,$(BOARD_MODEM_TYPE)),)
-+ifneq ($(filter m7450 ss222 xmm7260,$(BOARD_MODEM_TYPE)),)
- LOCAL_CFLAGS += -DNEEDS_VIDEO_CALL_FIELD
  endif
  
 diff --git a/ril/libril/ril.cpp b/ril/libril/ril.cpp

@@ -25,15 +25,12 @@ LOCAL_MODULE := audio.primary.$(TARGET_BOOTLOADER_BOARD_NAME)
 LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_MODULE_TAGS := optional
 
-LOCAL_SRC_FILES := audio_hw.c ril_interface.c
+LOCAL_SRC_FILES := audio_hw.c
 
 LOCAL_C_INCLUDES += \
-	external/tinyalsa/include \
-	$(call include-path-for, audio-effects) \
-	$(call include-path-for, audio-utils) \
-	$(call include-path-for, audio-route)
+	external/tinyalsa/include
 
-LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libaudioutils libaudioroute libdl libhardware
+LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libdl libhardware
 
 include $(BUILD_SHARED_LIBRARY)
 

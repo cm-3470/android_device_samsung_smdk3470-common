@@ -1,9 +1,9 @@
-From db14924888e126db8117c88f039ef9ae5257727d Mon Sep 17 00:00:00 2001
-From: CTXz <ctx.xda@gmail.com>
-Date: Fri, 11 Mar 2016 22:00:57 +0100
+From a458d65c56bda473e3d767670981e90e8ddb4f93 Mon Sep 17 00:00:00 2001
+From: tobigun <hennymcc@yahoo.de>
+Date: Fri, 27 May 2016 13:29:42 +0200
 Subject: [PATCH] ril: add support for ss222 (G800F/Y/M)
 
-Change-Id: I818eb8169aa3f1e1a5a9ed47eb4e58b95dd23ea6
+Change-Id: Id1dff668f979ede208a0defa83ab6f49b4b3e712
 ---
  ril/Android.mk                  |  2 +-
  ril/libril/Android.mk           |  2 +-
@@ -12,33 +12,33 @@ Change-Id: I818eb8169aa3f1e1a5a9ed47eb4e58b95dd23ea6
  4 files changed, 25 insertions(+), 2 deletions(-)
 
 diff --git a/ril/Android.mk b/ril/Android.mk
-index 6ed67a3..6cab57c 100644
+index 0b76b81..f8a63be 100644
 --- a/ril/Android.mk
 +++ b/ril/Android.mk
 @@ -20,7 +20,7 @@ ifeq ($(BOARD_VENDOR),samsung)
  
  # libril
  ifeq ($(BOARD_PROVIDES_LIBRIL),true)
--ifneq ($(filter xmm6260 xmm6262 xmm6360 xmm7260 m7450 ss333 mdm9x35,$(BOARD_MODEM_TYPE)),)
-+ifneq ($(filter xmm6260 xmm6262 xmm6360 xmm7260 m7450 ss222 ss333 mdm9x35,$(BOARD_MODEM_TYPE)),)
+-ifneq ($(filter m7450 mdm9x35 ss333 tss310 xmm6260 xmm6262 xmm6360 xmm7260,$(BOARD_MODEM_TYPE)),)
++ifneq ($(filter m7450 mdm9x35 ss222 ss333 tss310 xmm6260 xmm6262 xmm6360 xmm7260,$(BOARD_MODEM_TYPE)),)
  include $(RIL_PATH)/libril/Android.mk
  endif
  endif
 diff --git a/ril/libril/Android.mk b/ril/libril/Android.mk
-index c5e1c5e..8329a72 100644
+index 9d8da96..4ea5a8e 100644
 --- a/ril/libril/Android.mk
 +++ b/ril/libril/Android.mk
 @@ -28,7 +28,7 @@ endif
  ifeq ($(BOARD_MODEM_TYPE),xmm6260)
  LOCAL_CFLAGS := -DMODEM_TYPE_XMM6260
  endif
--ifneq ($(filter m7450 mdm9x35 ss333 xmm7260,$(BOARD_MODEM_TYPE)),)
-+ifneq ($(filter m7450 mdm9x35 ss222 ss333 xmm7260,$(BOARD_MODEM_TYPE)),)
+-ifneq ($(filter m7450 mdm9x35 ss333 tss310 xmm7260,$(BOARD_MODEM_TYPE)),)
++ifneq ($(filter m7450 mdm9x35 ss222 ss333 tss310 xmm7260,$(BOARD_MODEM_TYPE)),)
  LOCAL_CFLAGS := -DSAMSUNG_NEXT_GEN_MODEM
  endif
  
 diff --git a/ril/libril/ril.cpp b/ril/libril/ril.cpp
-index 888ee48..7cf5e0f 100644
+index c3f50ba..9db7fa5 100644
 --- a/ril/libril/ril.cpp
 +++ b/ril/libril/ril.cpp
 @@ -173,6 +173,8 @@ static pthread_t s_tid_dispatch;

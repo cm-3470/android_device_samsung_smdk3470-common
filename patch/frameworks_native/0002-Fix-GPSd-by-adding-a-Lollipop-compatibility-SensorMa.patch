@@ -1,7 +1,7 @@
-From c2c9d1d0b7a0bbc966872342662dd307d42f13b0 Mon Sep 17 00:00:00 2001
+From c1e36d4bd92d3809707797426b7e4aa343180ee8 Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Mon, 28 Dec 2015 23:54:34 +0100
-Subject: [PATCH] Fix GPSd by adding a Lollipop compatibility SensorManager
+Subject: [PATCH 2/2] Fix GPSd by adding a Lollipop compatibility SensorManager
 
 Change-Id: Id12a921f93b012c3b6bd93975f02a2a06785f2dd
 ---
@@ -63,10 +63,10 @@ index 0000000..482e9ee
 +
 +#endif // ANDROID_GUI_SENSOR_MANAGER_COMPAT_H
 diff --git a/libs/gui/Android.mk b/libs/gui/Android.mk
-index 76aec6e..16e3da9 100644
+index 493523a..a3687ef 100644
 --- a/libs/gui/Android.mk
 +++ b/libs/gui/Android.mk
-@@ -65,6 +65,7 @@ LOCAL_SRC_FILES := \
+@@ -67,6 +67,7 @@ LOCAL_SRC_FILES := \
  	Sensor.cpp \
  	SensorEventQueue.cpp \
  	SensorManager.cpp \
@@ -133,5 +133,5 @@ index 0000000..3481a49
 +// ----------------------------------------------------------------------------
 +}; // namespace android
 -- 
-1.9.1
+2.7.4
 

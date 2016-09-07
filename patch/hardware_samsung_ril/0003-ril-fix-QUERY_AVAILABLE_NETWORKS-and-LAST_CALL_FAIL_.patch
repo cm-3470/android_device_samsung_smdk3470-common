@@ -1,7 +1,8 @@
-From 4bbfeb2720a077399e9f83e8d7a35325419c43ef Mon Sep 17 00:00:00 2001
+From 153782bf267d7ab7b753c2642484232f7943b256 Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Sun, 21 Feb 2016 00:12:03 +0100
-Subject: [PATCH] ril: fix QUERY_AVAILABLE_NETWORKS and LAST_CALL_FAIL_CAUSE
+Subject: [PATCH 2/2] ril: fix QUERY_AVAILABLE_NETWORKS and
+ LAST_CALL_FAIL_CAUSE
 
 The returned data structs were not compatible with MM Ril.java.
 The wrong format of QUERY_AVAILABLE_NETWORKS caused a crash when a
@@ -18,7 +19,7 @@ Change-Id: I77d40df4a233311b0474ddcbe72fba90f7647baa
  2 files changed, 37 insertions(+), 2 deletions(-)
 
 diff --git a/ril/libril/ril.cpp b/ril/libril/ril.cpp
-index 49c1c35..a8d9a93 100644
+index 9db7fa5..b15f964 100644
 --- a/ril/libril/ril.cpp
 +++ b/ril/libril/ril.cpp
 @@ -278,6 +278,7 @@ static void dispatchSimAuthentication(Parcel &p, RequestInfo *pRI);
@@ -29,7 +30,7 @@ index 49c1c35..a8d9a93 100644
  static int responseIntsGetPreferredNetworkType(Parcel &p, void *response, size_t responselen);
  static int responseStrings(Parcel &p, void *response, size_t responselen);
  static int responseStringsNetworks(Parcel &p, void *response, size_t responselen);
-@@ -2239,6 +2240,40 @@ responseInts(Parcel &p, void *response, size_t responselen) {
+@@ -2238,6 +2239,40 @@ responseInts(Parcel &p, void *response, size_t responselen) {
      return 0;
  }
  
@@ -93,5 +94,5 @@ index 001b470..cc6e131 100644
      {RIL_REQUEST_DTMF_STOP, dispatchVoid, responseVoid},
      {RIL_REQUEST_BASEBAND_VERSION, dispatchVoid, responseString},
 -- 
-1.9.1
+2.7.4
 

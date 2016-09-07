@@ -1,18 +1,18 @@
-From 4d605c46597dbf1768ce805a1679591c98ea988b Mon Sep 17 00:00:00 2001
-From: tobigun <hennymcc@yahoo.de>
-Date: Mon, 26 Oct 2015 01:17:48 +0100
+From 2da62fe8173c4b18b7e2db57863b38991c2d10d9 Mon Sep 17 00:00:00 2001
+From: Tobias Gunkel <hennymcc@yahoo.de>
+Date: Wed, 7 Sep 2016 21:40:30 +0200
 Subject: [PATCH] av: Add samsung wfd service
 
-Change-Id: I5bec41c27678f537f1b2c7207d8e93d188a28784
+Change-Id: I0e2811215435d3fc9bad43721d0cc2a7fbf4d339
 ---
  include/media/IWFDService.h           |  70 ++++++++++++++
  include/media/WFDService.h            |  60 ++++++++++++
  include/media/WFDServiceListener.h    |  52 +++++++++++
- media/libmedia/Android.mk             |   6 ++
+ media/libmedia/Android.mk             |   7 ++
  media/libmedia/IWFDService.cpp        | 166 ++++++++++++++++++++++++++++++++++
  media/libmedia/WFDService.cpp         |  75 +++++++++++++++
  media/libmedia/WFDServiceListener.cpp |  46 ++++++++++
- 7 files changed, 475 insertions(+)
+ 7 files changed, 476 insertions(+)
  create mode 100644 include/media/IWFDService.h
  create mode 100644 include/media/WFDService.h
  create mode 100644 include/media/WFDServiceListener.h
@@ -221,10 +221,10 @@ index 0000000..cc80549
 +}
 +#endif
 diff --git a/media/libmedia/Android.mk b/media/libmedia/Android.mk
-index 74e4eb1..a34f731 100644
+index df4e4b6..fccdb73 100644
 --- a/media/libmedia/Android.mk
 +++ b/media/libmedia/Android.mk
-@@ -69,6 +69,12 @@ LOCAL_SRC_FILES:= \
+@@ -75,6 +75,13 @@ LOCAL_SRC_FILES:= \
      StringArray.cpp \
      AudioPolicy.cpp
  
@@ -234,9 +234,10 @@ index 74e4eb1..a34f731 100644
 +    WFDService.cpp \
 +    WFDServiceListener.cpp
 +endif
- 
- #QTI Resampler
- ifeq ($(call is-vendor-board-platform,QCOM), true)
++
+ LOCAL_SHARED_LIBRARIES := \
+ 	libui liblog libcutils libutils libbinder libsonivox libicuuc libicui18n libexpat \
+         libcamera_client libstagefright_foundation \
 diff --git a/media/libmedia/IWFDService.cpp b/media/libmedia/IWFDService.cpp
 new file mode 100644
 index 0000000..923c8f6
@@ -543,5 +544,5 @@ index 0000000..6d02ec1
 +
 +}
 -- 
-1.9.1
+2.7.4
 

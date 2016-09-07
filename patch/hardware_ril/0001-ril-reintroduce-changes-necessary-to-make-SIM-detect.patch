@@ -1,7 +1,8 @@
-From 9ed69eaed35f8d7b6032241a1e0874dc215c61f7 Mon Sep 17 00:00:00 2001
+From 47c9650cb34bef23201438fa515197e3d4abea29 Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Thu, 31 Dec 2015 15:47:03 +0100
-Subject: [PATCH] ril: reintroduce changes necessary to make SIM detection work
+Subject: [PATCH 1/2] ril: reintroduce changes necessary to make SIM detection
+ work
 
 libril checks the size of RIL_CardStatus to detect whether it is v6 or
 v5. As Samsung added some additional fields the version cannot be
@@ -14,10 +15,10 @@ Change-Id: I0d786787e0416d110b9930f9a72384d0f50dcd5d
  2 files changed, 156 insertions(+), 2 deletions(-)
 
 diff --git a/include/telephony/ril.h b/include/telephony/ril.h
-index 2e71367..09cc5a8 100644
+index eba4eb8..2f5394b 100644
 --- a/include/telephony/ril.h
 +++ b/include/telephony/ril.h
-@@ -289,6 +289,12 @@ typedef struct {
+@@ -388,6 +388,12 @@ typedef struct {
  } RIL_CDMA_SignalInfoRecord;
  
  typedef struct {
@@ -30,7 +31,7 @@ index 2e71367..09cc5a8 100644
      RIL_CallState   state;
      int             index;      /* Connection Index for use with, eg, AT+CHLD */
      int             toa;        /* type of address, eg 145 = intl */
-@@ -297,12 +303,17 @@ typedef struct {
+@@ -396,12 +402,17 @@ typedef struct {
      char            als;        /* ALS line indicator if available
                                     (0 = line 1) */
      char            isVoice;    /* nonzero if this is is a voice call */
@@ -48,7 +49,7 @@ index 2e71367..09cc5a8 100644
  } RIL_Call;
  
  /* Deprecated, use RIL_Data_Call_Response_v6 */
-@@ -503,6 +514,7 @@ typedef struct {
+@@ -602,6 +613,7 @@ typedef struct {
      char *data;     /* May be NULL*/
      char *pin2;     /* May be NULL*/
      char *aidPtr;   /* AID value, See ETSI 102.221 8.1 and 101.220 4, NULL if no value. */
@@ -56,7 +57,7 @@ index 2e71367..09cc5a8 100644
  } RIL_SIM_IO_v6;
  
  /* Used by RIL_REQUEST_SIM_TRANSMIT_APDU_CHANNEL and
-@@ -770,6 +782,12 @@ typedef struct
+@@ -969,6 +981,12 @@ typedef struct
    int              pin1_replaced;   /* applicable to USIM, CSIM & ISIM */
    RIL_PinState     pin1;
    RIL_PinState     pin2;
@@ -69,7 +70,7 @@ index 2e71367..09cc5a8 100644
  } RIL_AppStatus;
  
  /* Deprecated, use RIL_CardStatus_v6 */
-@@ -4462,6 +4480,70 @@ typedef struct {
+@@ -5095,6 +5113,70 @@ typedef struct {
  
  /***********************************************************************/
  
@@ -140,7 +141,7 @@ index 2e71367..09cc5a8 100644
  
  #define RIL_UNSOL_RESPONSE_BASE 1000
  
-@@ -5061,6 +5143,73 @@ typedef struct {
+@@ -5694,6 +5776,73 @@ typedef struct {
  
  /***********************************************************************/
  
@@ -215,10 +216,10 @@ index 2e71367..09cc5a8 100644
  #if defined(ANDROID_MULTI_SIM)
  /**
 diff --git a/rild/rild.c b/rild/rild.c
-index efc7c9d..3b9d9b1 100644
+index a506b37..46af98e 100644
 --- a/rild/rild.c
 +++ b/rild/rild.c
-@@ -68,6 +68,8 @@ extern void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
+@@ -70,6 +70,8 @@ extern void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
          size_t datalen);
  #endif
  
@@ -227,7 +228,7 @@ index efc7c9d..3b9d9b1 100644
  extern void RIL_requestTimedCallback (RIL_TimedCallback callback,
          void *param, const struct timeval *relativeTime);
  
-@@ -368,7 +370,10 @@ OpenLib:
+@@ -375,7 +377,10 @@ OpenLib:
  done:
  
      RLOGD("RIL_Init starting sleep loop");
@@ -241,5 +242,5 @@ index efc7c9d..3b9d9b1 100644
 +    return 1;
  }
 -- 
-1.9.1
+2.7.4
 

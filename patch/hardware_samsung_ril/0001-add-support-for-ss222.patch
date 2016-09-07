@@ -1,7 +1,7 @@
-From a458d65c56bda473e3d767670981e90e8ddb4f93 Mon Sep 17 00:00:00 2001
+From 42c1c3c317c94f8e1dd8f336f522e50cf6ee6e12 Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Fri, 27 May 2016 13:29:42 +0200
-Subject: [PATCH] ril: add support for ss222 (G800F/Y/M)
+Subject: [PATCH 1/2] ril: add support for ss222 (G800F/Y/M)
 
 Change-Id: Id1dff668f979ede208a0defa83ab6f49b4b3e712
 ---
@@ -25,7 +25,7 @@ index 0b76b81..f8a63be 100644
  endif
  endif
 diff --git a/ril/libril/Android.mk b/ril/libril/Android.mk
-index 9d8da96..4ea5a8e 100644
+index 3e59bb5..39fb082 100644
 --- a/ril/libril/Android.mk
 +++ b/ril/libril/Android.mk
 @@ -28,7 +28,7 @@ endif
@@ -97,5 +97,5 @@ index 69a2f11..2c8e70b 100755
  LOCAL_CFLAGS += -DSAMSUNG_NEXT_GEN_MODEM
  endif
 -- 
-1.9.1
+2.7.4
 

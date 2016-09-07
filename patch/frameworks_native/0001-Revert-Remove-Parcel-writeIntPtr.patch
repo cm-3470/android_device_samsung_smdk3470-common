@@ -1,7 +1,7 @@
-From 4bbe208baff12490ba14c2d08903d8a740bd5873 Mon Sep 17 00:00:00 2001
+From dfa3542bf33c291e04b4d00805d0e8ff8d48c701 Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Mon, 26 Oct 2015 01:03:48 +0100
-Subject: [PATCH] Revert "Remove Parcel::writeIntPtr."
+Subject: [PATCH 1/2] Revert "Remove Parcel::writeIntPtr."
 
 Change-Id: If64f2591e1fb04a643a4b17e4377e232375beb16
 ---
@@ -10,10 +10,10 @@ Change-Id: If64f2591e1fb04a643a4b17e4377e232375beb16
  2 files changed, 6 insertions(+)
 
 diff --git a/include/binder/Parcel.h b/include/binder/Parcel.h
-index 3ada1e9..aedc2a6 100644
+index bd23069..13b06b6 100644
 --- a/include/binder/Parcel.h
 +++ b/include/binder/Parcel.h
-@@ -100,6 +100,7 @@ public:
+@@ -107,6 +107,7 @@ public:
      status_t            writeUint64(uint64_t val);
      status_t            writeFloat(float val);
      status_t            writeDouble(double val);
@@ -22,10 +22,10 @@ index 3ada1e9..aedc2a6 100644
      status_t            writeString8(const String8& str);
      status_t            writeString16(const String16& str);
 diff --git a/libs/binder/Parcel.cpp b/libs/binder/Parcel.cpp
-index 7a4ddc4..1d122a2 100644
+index 52e24f4..38f3608 100644
 --- a/libs/binder/Parcel.cpp
 +++ b/libs/binder/Parcel.cpp
-@@ -801,6 +801,11 @@ status_t Parcel::writeDouble(double val)
+@@ -1051,6 +1051,11 @@ status_t Parcel::writeDouble(double val)
  
  #endif
  
@@ -38,5 +38,5 @@ index 7a4ddc4..1d122a2 100644
  {
      return write(str, strlen(str)+1);
 -- 
-1.9.1
+2.7.4
 

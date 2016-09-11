@@ -1,4 +1,4 @@
-From 42c1c3c317c94f8e1dd8f336f522e50cf6ee6e12 Mon Sep 17 00:00:00 2001
+From ccc5b150f0271ac5d030381569bd9325ec14e9e0 Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Fri, 27 May 2016 13:29:42 +0200
 Subject: [PATCH 1/2] ril: add support for ss222 (G800F/Y/M)
@@ -7,9 +7,9 @@ Change-Id: Id1dff668f979ede208a0defa83ab6f49b4b3e712
 ---
  ril/Android.mk                  |  2 +-
  ril/libril/Android.mk           |  2 +-
- ril/libril/ril.cpp              | 18 ++++++++++++++++++
+ ril/libril/ril.cpp              | 32 ++++++++++++++++++++++++++++++++
  ril/libsecril-client/Android.mk |  5 +++++
- 4 files changed, 25 insertions(+), 2 deletions(-)
+ 4 files changed, 39 insertions(+), 2 deletions(-)
 
 diff --git a/ril/Android.mk b/ril/Android.mk
 index 0b76b81..f8a63be 100644
@@ -38,10 +38,10 @@ index 3e59bb5..39fb082 100644
  endif
  
 diff --git a/ril/libril/ril.cpp b/ril/libril/ril.cpp
-index c3f50ba..9db7fa5 100644
+index 5bad7e0..bc99376 100644
 --- a/ril/libril/ril.cpp
 +++ b/ril/libril/ril.cpp
-@@ -173,6 +173,8 @@ static pthread_t s_tid_dispatch;
+@@ -181,6 +181,8 @@ static pthread_t s_tid_dispatch;
  static pthread_t s_tid_reader;
  static int s_started = 0;
  
@@ -50,8 +50,8 @@ index c3f50ba..9db7fa5 100644
  static int s_fdDebug = -1;
  static int s_fdDebug_socket2 = -1;
  
-@@ -5040,6 +5042,14 @@ void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
-                                             &TIMEVAL_WAKE_TIMEOUT);
+@@ -5435,6 +5437,14 @@ void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
+         memcpy(s_lastNITZTimeData, p.data(), p.dataSize());
      }
  
 +    if (unsolResponse == RIL_UNSOL_AM) {
@@ -65,7 +65,7 @@ index c3f50ba..9db7fa5 100644
      // Normal exit
      return;
  
-@@ -5049,6 +5059,14 @@ error_exit:
+@@ -5444,6 +5468,14 @@ error_exit:
      }
  }
  

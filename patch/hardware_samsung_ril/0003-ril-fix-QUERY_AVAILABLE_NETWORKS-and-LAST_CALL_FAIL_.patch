@@ -1,4 +1,4 @@
-From 153782bf267d7ab7b753c2642484232f7943b256 Mon Sep 17 00:00:00 2001
+From 20aa249b3d3c57bcb952865971e4ed9cee29204a Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Sun, 21 Feb 2016 00:12:03 +0100
 Subject: [PATCH 2/2] ril: fix QUERY_AVAILABLE_NETWORKS and
@@ -19,10 +19,10 @@ Change-Id: I77d40df4a233311b0474ddcbe72fba90f7647baa
  2 files changed, 37 insertions(+), 2 deletions(-)
 
 diff --git a/ril/libril/ril.cpp b/ril/libril/ril.cpp
-index 9db7fa5..b15f964 100644
+index bc99376..61e84ed 100644
 --- a/ril/libril/ril.cpp
 +++ b/ril/libril/ril.cpp
-@@ -278,6 +278,7 @@ static void dispatchSimAuthentication(Parcel &p, RequestInfo *pRI);
+@@ -289,6 +289,7 @@ static void dispatchSimAuthentication(Parcel &p, RequestInfo *pRI);
  static void dispatchDataProfile(Parcel &p, RequestInfo *pRI);
  static void dispatchRadioCapability(Parcel &p, RequestInfo *pRI);
  static int responseInts(Parcel &p, void *response, size_t responselen);
@@ -30,7 +30,7 @@ index 9db7fa5..b15f964 100644
  static int responseIntsGetPreferredNetworkType(Parcel &p, void *response, size_t responselen);
  static int responseStrings(Parcel &p, void *response, size_t responselen);
  static int responseStringsNetworks(Parcel &p, void *response, size_t responselen);
-@@ -2238,6 +2239,40 @@ responseInts(Parcel &p, void *response, size_t responselen) {
+@@ -2331,6 +2332,40 @@ responseInts(Parcel &p, void *response, size_t responselen) {
      return 0;
  }
  

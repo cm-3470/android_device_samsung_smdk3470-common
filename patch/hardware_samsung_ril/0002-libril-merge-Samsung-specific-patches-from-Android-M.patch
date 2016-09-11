@@ -1,0 +1,445 @@
+From f57a66b5747e600f5fc570daba29efe0d05a9aa5 Mon Sep 17 00:00:00 2001
+From: Tobias Gunkel <hennymcc@yahoo.de>
+Date: Sun, 11 Sep 2016 10:45:08 +0200
+Subject: [PATCH 1/2] libril: merge Samsung specific patches from Android M
+
+Change-Id: I4163069ab8e994a22b112fd70fb4d6afb79a1c64
+---
+ ril/libril/ril.cpp | 235 ++++++++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 197 insertions(+), 38 deletions(-)
+
+diff --git a/ril/libril/ril.cpp b/ril/libril/ril.cpp
+index e1d30ea..b00443b 100644
+--- a/ril/libril/ril.cpp
++++ b/ril/libril/ril.cpp
+@@ -71,6 +71,7 @@ namespace android {
+ #define ANDROID_WAKE_LOCK_USECS 200000
+ 
+ #define PROPERTY_RIL_IMPL "gsm.version.ril-impl"
++#define PROPERTY_QAN_ELEMENTS "ro.ril.telephony.mqanelements"
+ 
+ // match with constant in RIL.java
+ #define MAX_COMMAND_BYTES (8 * 1024)
+@@ -168,6 +169,9 @@ extern "C" const char * rilSocketIdToString(RIL_SOCKET_ID socket_id);
+ 
+ extern "C"
+ char rild[MAX_SOCKET_NAME_LENGTH] = SOCKET_NAME_RIL;
++
++#define RIL_VENDOR_COMMANDS_OFFSET 10000
++
+ /*******************************************************************/
+ 
+ RIL_RadioFunctions s_callbacks = {0, NULL, NULL, NULL, NULL, NULL};
+@@ -283,8 +287,10 @@ static void dispatchSimAuthentication(Parcel &p, RequestInfo *pRI);
+ static void dispatchDataProfile(Parcel &p, RequestInfo *pRI);
+ static void dispatchRadioCapability(Parcel &p, RequestInfo *pRI);
+ static int responseInts(Parcel &p, void *response, size_t responselen);
+-static int responseFailCause(Parcel &p, void *response, size_t responselen);
++static int responseIntsGetPreferredNetworkType(Parcel &p, void *response, size_t responselen);
+ static int responseStrings(Parcel &p, void *response, size_t responselen);
++static int responseStringsNetworks(Parcel &p, void *response, size_t responselen);
++static int responseStrings(Parcel &p, void *response, size_t responselen, bool network_search);
+ static int responseString(Parcel &p, void *response, size_t responselen);
+ static int responseVoid(Parcel &p, void *response, size_t responselen);
+ static int responseCallList(Parcel &p, void *response, size_t responselen);
+@@ -359,6 +365,14 @@ static UnsolResponseInfo s_unsolResponses[] = {
+ #include "ril_unsol_commands.h"
+ };
+ 
++static CommandInfo s_commands_v[] = {
++#include <telephony/ril_commands_vendor.h>
++};
++
++static UnsolResponseInfo s_unsolResponses_v[] = {
++#include <telephony/ril_unsol_commands_vendor.h>
++};
++
+ /* For older RILs that do not support new commands RIL_REQUEST_VOICE_RADIO_TECH and
+    RIL_UNSOL_VOICE_RADIO_TECH_CHANGED messages, decode the voice radio tech from
+    radio state message and store it. Every time there is a change in Radio State
+@@ -470,7 +484,13 @@ issueLocalRequest(int request, void *data, int len, RIL_SOCKET_ID socket_id) {
+ 
+     pRI->local = 1;
+     pRI->token = 0xffffffff;        // token is not used in this context
+-    pRI->pCI = &(s_commands[request]);
++
++    /* Check vendor commands */
++    if (request > RIL_VENDOR_COMMANDS_OFFSET) {
++        pRI->pCI = &(s_commands_v[request - RIL_VENDOR_COMMANDS_OFFSET]);
++    } else {
++        pRI->pCI = &(s_commands[request]);
++    }
+     pRI->socket_id = socket_id;
+ 
+     ret = pthread_mutex_lock(pendingRequestsMutexHook);
+@@ -540,7 +560,19 @@ processCommandBuffer(void *buffer, size_t buflen, RIL_SOCKET_ID socket_id) {
+         return 0;
+     }
+ 
+-    if (request < 1 || request >= (int32_t)NUM_ELEMS(s_commands)) {
++    CommandInfo *pCI = NULL;
++    if (request > RIL_VENDOR_COMMANDS_OFFSET) {
++        int index = request - RIL_VENDOR_COMMANDS_OFFSET;
++        RLOGD("processCommandBuffer: samsung request=%d, index=%d",
++                request, index);
++        if (index < (int32_t)NUM_ELEMS(s_commands_v))
++            pCI = &(s_commands_v[index]);
++    } else {
++        if (request < (int32_t)NUM_ELEMS(s_commands))
++            pCI = &(s_commands[request]);
++    }
++
++    if (pCI == NULL) {
+         Parcel pErr;
+         RLOGE("unsupported request code %d token %d", request, token);
+         // FIXME this should perhaps return a response
+@@ -559,7 +591,7 @@ processCommandBuffer(void *buffer, size_t buflen, RIL_SOCKET_ID socket_id) {
+     }
+ 
+     pRI->token = token;
+-    pRI->pCI = &(s_commands[request]);
++    pRI->pCI = pCI;
+     pRI->socket_id = socket_id;
+ 
+     ret = pthread_mutex_lock(pendingRequestsMutexHook);
+@@ -807,6 +839,9 @@ dispatchDial (Parcel &p, RequestInfo *pRI) {
+     int32_t sizeOfDial;
+     int32_t t;
+     int32_t uusPresent;
++#ifdef SAMSUNG_NEXT_GEN_MODEM
++    char *csv;
++#endif
+     status_t status;
+ 
+     RLOGD("dispatchDial");
+@@ -821,6 +856,25 @@ dispatchDial (Parcel &p, RequestInfo *pRI) {
+         goto invalid;
+     }
+ 
++#ifdef SAMSUNG_NEXT_GEN_MODEM
++    /* CallDetails.call_type */
++    status = p.readInt32(&t);
++    if (status != NO_ERROR) {
++        goto invalid;
++    }
++    /* CallDetails.call_domain */
++    p.readInt32(&t);
++    if (status != NO_ERROR) {
++        goto invalid;
++    }
++    /* CallDetails.getCsvFromExtra */
++    csv = strdupReadString(p);
++    if (csv == NULL) {
++        goto invalid;
++    }
++    free(csv);
++#endif
++
+     if (s_callbacks.version < 3) { // Remove when partners upgrade to version 3
+         uusPresent = 0;
+         sizeOfDial = sizeof(dial) - sizeof(RIL_UUS_Info *);
+@@ -832,7 +886,17 @@ dispatchDial (Parcel &p, RequestInfo *pRI) {
+         }
+ 
+         if (uusPresent == 0) {
++#if defined(MODEM_TYPE_XMM6262) || defined(SAMSUNG_NEXT_GEN_MODEM)
+             dial.uusInfo = NULL;
++#elif defined(MODEM_TYPE_XMM6260)
++            /* Samsung hack */
++            memset(&uusInfo, 0, sizeof(RIL_UUS_Info));
++            uusInfo.uusType = (RIL_UUS_Type) 0;
++            uusInfo.uusDcs = (RIL_UUS_DCS) 0;
++            uusInfo.uusData = NULL;
++            uusInfo.uusLength = 0;
++            dial.uusInfo = &uusInfo;
++#endif
+         } else {
+             int32_t len;
+ 
+@@ -2265,36 +2329,37 @@ responseInts(Parcel &p, void *response, size_t responselen) {
+     return 0;
+ }
+ 
+-// Response is an int or RIL_LastCallFailCauseInfo.
+-// Currently, only Shamu plans to use RIL_LastCallFailCauseInfo.
+-// TODO(yjl): Let all implementations use RIL_LastCallFailCauseInfo.
+-static int responseFailCause(Parcel &p, void *response, size_t responselen) {
++static int
++responseIntsGetPreferredNetworkType(Parcel &p, void *response, size_t responselen) {
++    int numInts;
++
+     if (response == NULL && responselen != 0) {
+         RLOGE("invalid response: NULL");
+         return RIL_ERRNO_INVALID_RESPONSE;
+     }
++    if (responselen % sizeof(int) != 0) {
++        RLOGE("responseInts: invalid response length %d expected multiple of %d\n",
++            (int)responselen, (int)sizeof(int));
++        return RIL_ERRNO_INVALID_RESPONSE;
++    }
+ 
+-    if (responselen == sizeof(int)) {
+-      startResponse;
+-      int *p_int = (int *) response;
+-      appendPrintBuf("%s%d,", printBuf, p_int[0]);
+-      p.writeInt32(p_int[0]);
+-      removeLastChar;
+-      closeResponse;
+-    } else if (responselen == sizeof(RIL_LastCallFailCauseInfo)) {
+-      startResponse;
+-      RIL_LastCallFailCauseInfo *p_fail_cause_info = (RIL_LastCallFailCauseInfo *) response;
+-      appendPrintBuf("%s[cause_code=%d,vendor_cause=%s]", printBuf, p_fail_cause_info->cause_code,
+-                     p_fail_cause_info->vendor_cause);
+-      p.writeInt32(p_fail_cause_info->cause_code);
+-      writeStringToParcel(p, p_fail_cause_info->vendor_cause);
+-      removeLastChar;
+-      closeResponse;
+-    } else {
+-      RLOGE("responseFailCause: invalid response length %d expected an int or "
+-            "RIL_LastCallFailCauseInfo", (int)responselen);
+-      return RIL_ERRNO_INVALID_RESPONSE;
++    int *p_int = (int *) response;
++
++    numInts = responselen / sizeof(int);
++    p.writeInt32 (numInts);
++
++    /* each int*/
++    startResponse;
++    for (int i = 0 ; i < numInts ; i++) {
++        if (i == 0 && p_int[0] == 7) {
++            RLOGD("REQUEST_GET_PREFERRED_NETWORK_TYPE: NETWORK_MODE_GLOBAL => NETWORK_MODE_WCDMA_PREF");
++            p_int[0] = 0;
++        }
++        appendPrintBuf("%s%d,", printBuf, p_int[i]);
++        p.writeInt32(p_int[i]);
+     }
++    removeLastChar;
++    closeResponse;
+ 
+     return 0;
+ }
+@@ -2308,6 +2373,15 @@ static int responseStringsWithVersion(int version, Parcel &p, void *response, si
+ 
+ /** response is a char **, pointing to an array of char *'s */
+ static int responseStrings(Parcel &p, void *response, size_t responselen) {
++    return responseStrings(p, response, responselen, false);
++}
++
++static int responseStringsNetworks(Parcel &p, void *response, size_t responselen) {
++    return responseStrings(p, response, responselen, true);
++}
++
++/** response is a char **, pointing to an array of char *'s */
++static int responseStrings(Parcel &p, void *response, size_t responselen, bool network_search) {
+     int numStrings;
+ 
+     if (response == NULL && responselen != 0) {
+@@ -2326,11 +2400,24 @@ static int responseStrings(Parcel &p, void *response, size_t responselen) {
+         char **p_cur = (char **) response;
+ 
+         numStrings = responselen / sizeof(char *);
+-        p.writeInt32 (numStrings);
++        if (network_search) {
++            int32_t QANElements;
++
++            /*
++             * This needs to be set to same value as mQANElements in the RIL
++             * Telephony class.
++             */
++            QANElements = property_get_int32(PROPERTY_QAN_ELEMENTS, 4);
++            p.writeInt32 ((numStrings / 5) * QANElements);
++        } else {
++            p.writeInt32 (numStrings);
++        }
+ 
+         /* each string*/
+         startResponse;
+         for (int i = 0 ; i < numStrings ; i++) {
++            if (network_search && ((i + 1) % 5 == 0))
++                continue;
+             appendPrintBuf("%s%s,", printBuf, (char*)p_cur[i]);
+             writeStringToParcel (p, p_cur[i]);
+         }
+@@ -2391,6 +2478,18 @@ static int responseCallList(Parcel &p, void *response, size_t responselen) {
+         p.writeInt32(p_cur->isMT);
+         p.writeInt32(p_cur->als);
+         p.writeInt32(p_cur->isVoice);
++
++#ifdef NEEDS_VIDEO_CALL_FIELD
++        p.writeInt32(p_cur->isVideo);
++#endif
++
++#ifdef SAMSUNG_NEXT_GEN_MODEM
++        /* Pass CallDetails */
++        p.writeInt32(0);
++        p.writeInt32(0);
++        writeStringToParcel(p, "");
++#endif
++
+         p.writeInt32(p_cur->isVoicePrivacy);
+         writeStringToParcel(p, p_cur->number);
+         p.writeInt32(p_cur->numberPresentation);
+@@ -2419,6 +2518,11 @@ static int responseCallList(Parcel &p, void *response, size_t responselen) {
+             p_cur->als,
+             (p_cur->isVoice)?"voc":"nonvoc",
+             (p_cur->isVoicePrivacy)?"evp":"noevp");
++#ifdef SAMSUNG_NEXT_GEN_MODEM
++        appendPrintBuf("%s,%s,",
++            printBuf,
++            (p_cur->isVideo) ? "vid" : "novid");
++#endif
+         appendPrintBuf("%s%s,cli=%d,name='%s',%d]",
+             printBuf,
+             p_cur->number,
+@@ -2529,7 +2633,7 @@ static int responseDataCallListV6(Parcel &p, void *response, size_t responselen)
+         writeStringToParcel(p, p_cur[i].ifname);
+         writeStringToParcel(p, p_cur[i].addresses);
+         writeStringToParcel(p, p_cur[i].dnses);
+-        writeStringToParcel(p, p_cur[i].gateways);
++        writeStringToParcel(p, p_cur[i].addresses);
+         appendPrintBuf("%s[status=%d,retry=%d,cid=%d,%s,%s,%s,%s,%s,%s],", printBuf,
+             p_cur[i].status,
+             p_cur[i].suggestedRetryTime,
+@@ -2539,7 +2643,7 @@ static int responseDataCallListV6(Parcel &p, void *response, size_t responselen)
+             (char*)p_cur[i].ifname,
+             (char*)p_cur[i].addresses,
+             (char*)p_cur[i].dnses,
+-            (char*)p_cur[i].gateways);
++            (char*)p_cur[i].addresses);
+     }
+     removeLastChar;
+     closeResponse;
+@@ -3014,6 +3118,41 @@ static int responseCdmaInformationRecords(Parcel &p,
+ }
+ 
+ static void responseRilSignalStrengthV5(Parcel &p, RIL_SignalStrength_v10 *p_cur) {
++    int gsmSignalStrength = p_cur->GW_SignalStrength.signalStrength & 0xFF;
++#ifdef MODEM_TYPE_XMM6260
++    if (gsmSignalStrength < 0 ||
++        (gsmSignalStrength > 31 && p_cur-GW_SignalStrength.signalStrength != 99)) {
++        gsmSignalStrength = p_cur->CDMA_SignalStrength.dbm;
++    }
++#else
++    if (gsmSignalStrength < 0) {
++        gsmSignalStrength = 99;
++    } else if (gsmSignalStrength > 31 && gsmSignalStrength != 99) {
++        gsmSignalStrength = 31;
++    }
++#endif
++    p_cur->GW_SignalStrength.signalStrength = gsmSignalStrength;
++
++#if defined(MODEM_TYPE_XMM6262) || defined(SAMSUNG_NEXT_GEN_MODEM)
++    int cdmaDbm = p_cur->CDMA_SignalStrength.dbm & 0xFF;
++    if (cdmaDbm < 0) {
++        cdmaDbm = 99;
++    } else if (cdmaDbm > 31 && cdmaDbm != 99) {
++        cdmaDbm = 31;
++    }
++    p_cur->CDMA_SignalStrength.dbm = cdmaDbm;
++#endif
++
++#if defined(MODEM_TYPE_XMM6262) || defined(SAMSUNG_NEXT_GEN_MODEM)
++    int evdoDbm = p_cur->EVDO_SignalStrength.dbm & 0xFF;
++    if (evdoDbm < 0) {
++        evdoDbm = 99;
++    } else if (evdoDbm > 31 && evdoDbm != 99) {
++        evdoDbm = 31;
++    }
++    p_cur->EVDO_SignalStrength.dbm = evdoDbm;
++#endif
++
+     p.writeInt32(p_cur->GW_SignalStrength.signalStrength);
+     p.writeInt32(p_cur->GW_SignalStrength.bitErrorRate);
+     p.writeInt32(p_cur->CDMA_SignalStrength.dbm);
+@@ -4661,11 +4800,20 @@ RIL_register (const RIL_RadioFunctions *callbacks) {
+         assert(i == s_commands[i].requestNumber);
+     }
+ 
++    for (int i = 0; i < (int)NUM_ELEMS(s_commands_v); i++) {
++        assert(i + RIL_VENDOR_COMMANDS_OFFSET == s_commands[i].requestNumber);
++    }
++
+     for (int i = 0; i < (int)NUM_ELEMS(s_unsolResponses); i++) {
+         assert(i + RIL_UNSOL_RESPONSE_BASE
+                 == s_unsolResponses[i].requestNumber);
+     }
+ 
++    for (int i = 0; i < (int)NUM_ELEMS(s_unsolResponses_v); i++) {
++        assert(i + RIL_UNSOL_RESPONSE_BASE + RIL_VENDOR_COMMANDS_OFFSET
++                == s_unsolResponses[i].requestNumber);
++    }
++
+     // New rild impl calls RIL_startEventLoop() first
+     // old standalone impl wants it here.
+ 
+@@ -5146,12 +5294,12 @@ void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
+                                 size_t datalen)
+ #endif
+ {
+-    int unsolResponseIndex;
+     int ret;
+     int64_t timeReceived = 0;
+     bool shouldScheduleTimeout = false;
+     RIL_RadioState newState;
+     RIL_SOCKET_ID soc_id = RIL_SOCKET_1;
++    UnsolResponseInfo *pRI = NULL;
+ 
+ #if defined(ANDROID_MULTI_SIM)
+     soc_id = socket_id;
+@@ -5164,10 +5312,21 @@ void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
+         return;
+     }
+ 
+-    unsolResponseIndex = unsolResponse - RIL_UNSOL_RESPONSE_BASE;
++    /* Hack to include Samsung responses */
++    if (unsolResponse > RIL_VENDOR_COMMANDS_OFFSET + RIL_UNSOL_RESPONSE_BASE) {
++        int index = unsolResponse - RIL_VENDOR_COMMANDS_OFFSET - RIL_UNSOL_RESPONSE_BASE;
+ 
+-    if ((unsolResponseIndex < 0)
+-        || (unsolResponseIndex >= (int32_t)NUM_ELEMS(s_unsolResponses))) {
++        RLOGD("SAMSUNG: unsolResponse=%d, unsolResponseIndex=%d", unsolResponse, index);
++
++        if (index < (int32_t)NUM_ELEMS(s_unsolResponses_v))
++            pRI = &s_unsolResponses_v[index];
++    } else {
++        int index = unsolResponse - RIL_UNSOL_RESPONSE_BASE;
++        if (index < (int32_t)NUM_ELEMS(s_unsolResponses))
++            pRI = &s_unsolResponses[index];
++    }
++
++    if (pRI == NULL || pRI->responseFunction == NULL) {
+         RLOGE("unsupported unsolicited response code %d", unsolResponse);
+         return;
+     }
+@@ -5175,7 +5334,7 @@ void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
+     // Grab a wake lock if needed for this reponse,
+     // as we exit we'll either release it immediately
+     // or set a timer to release it later.
+-    switch (s_unsolResponses[unsolResponseIndex].wakeType) {
++    switch (pRI->wakeType) {
+         case WAKE_PARTIAL:
+             grabPartialWakeLock();
+             shouldScheduleTimeout = true;
+@@ -5207,8 +5366,8 @@ void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
+     }
+     p.writeInt32 (unsolResponse);
+ 
+-    ret = s_unsolResponses[unsolResponseIndex]
+-                .responseFunction(p, const_cast<void*>(data), datalen);
++    ret = pRI->responseFunction(p, const_cast<void*>(data), datalen);
++
+     if (ret != 0) {
+         // Problem with the response. Don't continue;
+         goto error_exit;
+@@ -5396,7 +5396,7 @@ void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
+ 
+     Parcel p;
+     if (s_callbacks.version >= 13
+-                && s_unsolResponses[unsolResponseIndex].wakeType == WAKE_PARTIAL) {
++                && pRI->wakeType == WAKE_PARTIAL) {
+         p.writeInt32 (RESPONSE_UNSOLICITED_ACK_EXP);
+     } else {
+         p.writeInt32 (RESPONSE_UNSOLICITED);
+-- 
+2.7.4
+

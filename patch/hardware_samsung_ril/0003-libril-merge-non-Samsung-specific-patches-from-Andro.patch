@@ -1,7 +1,7 @@
-From 2cec378fd540c89f5bccaf5eb9b960dc9f7c09eb Mon Sep 17 00:00:00 2001
+From 768ee7a1c2bef0eb7cc7823386e7650f8d388312 Mon Sep 17 00:00:00 2001
 From: Tobias Gunkel <hennymcc@yahoo.de>
 Date: Sun, 11 Sep 2016 10:47:49 +0200
-Subject: [PATCH 2/2] libril: merge non-Samsung specific patches from Android M
+Subject: [PATCH 2/4] libril: merge non-Samsung specific patches from Android M
 
 Change-Id: I3206364f25010d63324691c33623ac04071117f8
 Note: these patches should be applied to hardware/ril/libril instead
@@ -10,7 +10,7 @@ Note: these patches should be applied to hardware/ril/libril instead
  1 file changed, 10 insertions(+), 10 deletions(-)
 
 diff --git a/ril/libril/ril.cpp b/ril/libril/ril.cpp
-index b00443b..5bad7e0 100644
+index d10582a..ceb91c0 100644
 --- a/ril/libril/ril.cpp
 +++ b/ril/libril/ril.cpp
 @@ -2020,7 +2020,7 @@ static void dispatchSimAuthentication(Parcel &p, RequestInfo *pRI)

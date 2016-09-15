@@ -1,41 +1,17 @@
-From 4fbce7c477949b66ee3c8609a8f3dac8db8a728a Mon Sep 17 00:00:00 2001
+From 59d8152d3d544489df9a4f4a9e4d61da8bc38881 Mon Sep 17 00:00:00 2001
 From: Tobias Gunkel <hennymcc@yahoo.de>
 Date: Sun, 11 Sep 2016 09:18:01 +0200
-Subject: [PATCH] libril: replace with Android N base-version from
+Subject: [PATCH 1/5] libril: replace with Android N base-version from
  hardware/ril/libril
 
 revert Samsung specific changes to reapply changes on CM14 base
 
 Change-Id: I3441fa3b78b7739fa1c7d859fd6554d39ffd25a3
 ---
- ril/libril/Android.mk       |  6 +++---
- ril/libril/RilSapSocket.cpp | 31 +++++++++++++++--------------
- ril/libril/RilSocket.h      |  2 +-
- ril/libril/ril_ex.h         | 48 ---------------------------------------------
- ril/libril/ril.cpp          | 1375 ++++++++++++++++++++++++++++++++--------------------
- 5 file changed, 868 insertions(+), 594 deletions(-)
- delete mode 100644 ril/libril/ril_ex.h
+ ril/libril/RilSapSocket.cpp |   31 +-
+ ril/libril/ril.cpp          | 1365 ++++++++++++++++++++++++++-----------------
+ 2 files changed, 859 insertions(+), 537 deletions(-)
 
-diff --git a/ril/libril/Android.mk b/ril/libril/Android.mk
-index 39fb082..6a55aa2 100644
---- a/ril/libril/Android.mk
-+++ b/ril/libril/Android.mk
-@@ -40,12 +40,12 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
- LOCAL_C_INCLUDES += external/nanopb-c
- 
- LOCAL_MODULE:= libril
--
--LOCAL_COPY_HEADERS_TO := libril
--LOCAL_COPY_HEADERS := ril_ex.h
-+LOCAL_CLANG := true
-+LOCAL_SANITIZE := integer
- 
- include $(BUILD_SHARED_LIBRARY)
- 
-+
- # For RdoServD which needs a static library
- # =========================================
- ifneq ($(ANDROID_BIONIC_TRANSITION),)
 diff --git a/ril/libril/RilSapSocket.cpp b/ril/libril/RilSapSocket.cpp
 index e422f34..19457f4 100644
 --- a/ril/libril/RilSapSocket.cpp
@@ -82,75 +58,8 @@ index e422f34..19457f4 100644
      }
  
      // Deallocate SapSocketRequest
-diff --git a/ril/libril/RilSocket.h b/ril/libril/RilSocket.h
-index 1539c11..619401a 100644
---- a/ril/libril/RilSocket.h
-+++ b/ril/libril/RilSocket.h
-@@ -16,7 +16,7 @@
- 
- #ifndef RIL_SOCKET_H_INCLUDED
- #define RIL_SOCKET_H_INCLUDED
--#include "ril_ex.h"
-+#include <libril/ril_ex.h>
- #include "rilSocketQueue.h"
- #include <ril_event.h>
- 
-diff --git a/ril/libril/ril_ex.h b/ril/libril/ril_ex.h
-deleted file mode 100644
-index 8e15d65..0000000
---- a/ril/libril/ril_ex.h
-+++ /dev/null
-@@ -1,48 +0,0 @@
--/*
--* Copyright (C) 2014 The Android Open Source Project
--*
--* Licensed under the Apache License, Version 2.0 (the "License");
--* you may not use this file except in compliance with the License.
--* You may obtain a copy of the License at
--*
--*     http://www.apache.org/licenses/LICENSE-2.0
--*
--* Unless required by applicable law or agreed to in writing, software
--* distributed under the License is distributed on an "AS IS" BASIS,
--* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
--* See the License for the specific language governing permissions and
--* limitations under the License.
--*/
--
--#ifndef RIL_EX_H_INCLUDED
--#define RIL_EX_H_INCLUDED
--
--#include <telephony/ril.h>
--#include <telephony/record_stream.h>
--
--#define NUM_ELEMS_SOCKET(a)     (sizeof (a) / sizeof (a)[0])
--
--void rilEventAddWakeup_helper(struct ril_event *ev);
--void listenCallback_helper(int fd, short flags, void *param);
--int blockingWrite_helper(int fd, void* data, size_t len);
--
--enum SocketWakeType {DONT_WAKE, WAKE_PARTIAL};
--
--typedef enum {
--    RIL_TELEPHONY_SOCKET,
--    RIL_SAP_SOCKET
--} RIL_SOCKET_TYPE;
--
--typedef struct SocketListenParam {
--    RIL_SOCKET_ID socket_id;
--    int fdListen;
--    int fdCommand;
--    char* processName;
--    struct ril_event* commands_event;
--    struct ril_event* listen_event;
--    void (*processCommandsCallback)(int fd, short flags, void *param);
--    RecordStream *p_rs;
--    RIL_SOCKET_TYPE type;
--} SocketListenParam;
--
--#endif
 diff --git a/ril/libril/ril.cpp b/ril/libril/ril.cpp
-index c3f50ba..e1d30ea 100644
+index 0d9f128..e1d30ea 100644
 --- a/ril/libril/ril.cpp
 +++ b/ril/libril/ril.cpp
 @@ -30,6 +30,7 @@
@@ -212,15 +121,6 @@ index c3f50ba..e1d30ea 100644
  
      #define startResponse           sprintf(printBuf, "%s {", printBuf)
      #define closeResponse           sprintf(printBuf, "%s}", printBuf)
-@@ -110,7 +116,7 @@ namespace android {
- 
-     #define clearPrintBuf           printBuf[0] = 0
-     #define removeLastChar          printBuf[strlen(printBuf)-1] = 0
--    #define appendPrintBuf(x...)    sprintf(printBuf, x)
-+    #define appendPrintBuf(x...)    snprintf(printBuf, PRINTBUF_SIZE, x)
- #else
-     #define startRequest
-     #define closeRequest
 @@ -144,6 +150,7 @@ typedef struct RequestInfo {
      char cancelled;
      char local;         // responses to local commands do not go back to command process
@@ -1683,28 +1583,6 @@ index c3f50ba..e1d30ea 100644
      closeResponse;
  
      return 0;
-@@ -3810,8 +3921,8 @@ static int responseLceData(Parcel &p, void *response, size_t responselen) {
-   p.write((void *)&(p_cur->lce_suspended), 1);
- 
-   startResponse;
--  appendPrintBuf("LCE info received: capacity %d confidence level %d"
--                  "and suspended %d",
-+  appendPrintBuf("LCE info received: capacity %d confidence level %d \
-+                  and suspended %d",
-                   p_cur->last_hop_capacity_kbps, p_cur->confidence_level,
-                   p_cur->lce_suspended);
-   closeResponse;
-@@ -3840,8 +3951,8 @@ static int responseActivityData(Parcel &p, void *response, size_t responselen) {
-   p.writeInt32(p_cur->rx_mode_time_ms);
- 
-   startResponse;
--  appendPrintBuf("Modem activity info received: sleep_mode_time_ms %d idle_mode_time_ms %d"
--                 "tx_mode_time_ms %d %d %d %d %d and rx_mode_time_ms %d",
-+  appendPrintBuf("Modem activity info received: sleep_mode_time_ms %d idle_mode_time_ms %d \
-+                  tx_mode_time_ms %d %d %d %d %d and rx_mode_time_ms %d",
-                   p_cur->sleep_mode_time_ms, p_cur->idle_mode_time_ms, p_cur->tx_mode_time_ms[0],
-                   p_cur->tx_mode_time_ms[1], p_cur->tx_mode_time_ms[2], p_cur->tx_mode_time_ms[3],
-                   p_cur->tx_mode_time_ms[4], p_cur->rx_mode_time_ms);
 @@ -4153,23 +4264,51 @@ static void debugCallback (int fd, short flags, void *param) {
  
      if (recv(acceptFD, &number, sizeof(int), 0) != sizeof(int)) {

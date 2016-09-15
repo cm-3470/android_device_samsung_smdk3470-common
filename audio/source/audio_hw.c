@@ -197,6 +197,7 @@ static int adev_set_voice_volume(struct audio_hw_device *dev, float volume);
 static int do_input_standby(struct stream_in *in);
 static int do_output_standby(struct stream_out *out);
 static void in_update_aux_channels(struct stream_in *in, effect_handle_t effect);
+void set_incall_device(struct audio_device *adev);
 
 static const struct dev_name_map_t {
     int mask;

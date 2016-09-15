@@ -79,8 +79,6 @@ BOARD_RIL_CLASS := ../../../device/samsung/smdk3470-common/ril
 # Sensors (libgui crashes otherwise if SENSOR_PERMISSION_BODY_SENSORS is defined by a sensor)
 TARGET_NO_SENSOR_PERMISSION_CHECK := true
 
-I_WANT_A_QUAIL_STAR := true
-
 # WFD
 BOARD_USES_WFD_SERVICE := true
 

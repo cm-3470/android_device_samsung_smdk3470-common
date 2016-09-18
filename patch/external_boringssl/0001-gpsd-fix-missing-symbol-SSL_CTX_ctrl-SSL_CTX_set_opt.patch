@@ -1,0 +1,49 @@
+From 849ef1c95c13f8994268f51fb85a8d8e7c93505d Mon Sep 17 00:00:00 2001
+From: Tobias Gunkel <hennymcc@yahoo.de>
+Date: Sun, 18 Sep 2016 20:51:45 +0200
+Subject: [PATCH] gpsd: fix missing symbol SSL_CTX_ctrl (SSL_CTX_set_options)
+
+gpsd needs the symbol SSL_CTX_ctrl() as SSL_CTX_set_options() was
+previously a macro to SSL_CTX_ctrl() which is now removed.
+
+Change-Id: I2a2cf755c94438065a245b9891eb5eda29de1266
+---
+ src/include/openssl/ssl.h | 3 +++
+ src/ssl/ssl_lib.c         | 7 +++++++
+ 2 files changed, 10 insertions(+)
+
+diff --git a/src/include/openssl/ssl.h b/src/include/openssl/ssl.h
+index dcfee91..8486d70 100644
+--- a/src/include/openssl/ssl.h
++++ b/src/include/openssl/ssl.h
+@@ -564,6 +564,9 @@ OPENSSL_EXPORT int SSL_version(const SSL *ssl);
+  * bitmask representing the resulting enabled options. */
+ OPENSSL_EXPORT uint32_t SSL_CTX_set_options(SSL_CTX *ctx, uint32_t options);
+ 
++/* WORKAROUND: fix for GPSD lib */
++OPENSSL_EXPORT long SSL_CTX_ctrl(SSL_CTX *ctx, int cmd, long larg, void *parg);
++
+ /* SSL_CTX_clear_options disables all options set in |options| (which should be
+  * one or more of the |SSL_OP_*| values, ORed together) in |ctx|. It returns a
+  * bitmask representing the resulting enabled options. */
+diff --git a/src/ssl/ssl_lib.c b/src/ssl/ssl_lib.c
+index 08578a6..a653561 100644
+--- a/src/ssl/ssl_lib.c
++++ b/src/ssl/ssl_lib.c
+@@ -820,6 +820,13 @@ uint32_t SSL_CTX_set_options(SSL_CTX *ctx, uint32_t options) {
+   return ctx->options;
+ }
+ 
++long SSL_CTX_ctrl(SSL_CTX *ctx, int cmd, long larg, void *parg) {
++  if (cmd == 32) { /* SSL_CTRL_OPTIONS */
++    return SSL_CTX_set_options(ctx, larg);
++  }
++  return 0;
++}
++
+ uint32_t SSL_CTX_clear_options(SSL_CTX *ctx, uint32_t options) {
+   ctx->options &= ~options;
+   return ctx->options;
+-- 
+2.7.4
+

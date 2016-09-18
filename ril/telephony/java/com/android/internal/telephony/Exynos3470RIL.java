@@ -27,6 +27,7 @@ import android.telephony.PhoneNumberUtils;
 import android.telephony.SignalStrength;
 import com.android.internal.telephony.uicc.IccCardApplicationStatus;
 import com.android.internal.telephony.uicc.IccCardStatus;
+import com.android.internal.telephony.uicc.IccUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -202,7 +203,7 @@ public class Exynos3470RIL extends RIL {
 
     @Override
     protected void
-    processUnsolicited (Parcel p) {
+    processUnsolicited (Parcel p, int type) {
         Object ret;
         int dataPosition = p.dataPosition(); // save off position within the Parcel
         int response = p.readInt();
@@ -247,7 +248,7 @@ public class Exynos3470RIL extends RIL {
                 p.setDataPosition(dataPosition);
 
                 // Forward responses that we are not overriding to the super class
-                super.processUnsolicited(p);
+                super.processUnsolicited(p, type);
                 return;
         }
     }

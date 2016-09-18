@@ -61,7 +61,7 @@ public class Exynos3470RIL extends RIL {
             int cdmaSubscription, Integer instanceId) {
         super(context, preferredNetworkType, cdmaSubscription, instanceId);
         mAudioManager = (AudioManager)mContext.getSystemService(Context.AUDIO_SERVICE);
-        //mQANElements = 6;
+        mQANElements = 6;
     }
 
     @Override

@@ -82,6 +82,9 @@ TARGET_NO_SENSOR_PERMISSION_CHECK := true
 # WFD
 BOARD_USES_WFD_SERVICE := true
 
+# Legacy Blobs (for audio)
+TARGET_NEEDS_TEXT_RELOCATIONS := true
+
 # Wifi
 BOARD_WLAN_DEVICE                := bcmdhd
 BOARD_HAVE_SAMSUNG_WIFI          := true

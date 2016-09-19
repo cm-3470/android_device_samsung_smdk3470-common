@@ -62,7 +62,7 @@ TARGET_TINY_ALSA_IGNORE_SILENCE_SIZE := true
 # Bluetooth
 BOARD_HAVE_BLUETOOTH := true
 BOARD_HAVE_BLUETOOTH_BCM := true
-BOARD_BLUEDROID_VENDOR_CONF := device/samsung/smdk3470-common/bluetooth/vnd_smdk3470.txt
+BOARD_CUSTOM_BT_CONFIG := device/samsung/smdk3470-common/bluetooth/vnd_smdk3470.txt
 
 # Graphics
 USE_OPENGL_RENDERER := true

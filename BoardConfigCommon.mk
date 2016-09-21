@@ -68,6 +68,9 @@ BOARD_CUSTOM_BT_CONFIG := device/samsung/smdk3470-common/bluetooth/vnd_smdk3470.
 USE_OPENGL_RENDERER := true
 BOARD_EGL_CFG := device/samsung/smdk3470-common/egl/egl.cfg
 
+# Camera
+BOARD_GLOBAL_CFLAGS += -DCAMERA_VENDOR_L_COMPAT
+
 # RIL
 BOARD_PROVIDES_LIBRIL := true
 BOARD_MOBILEDATA_INTERFACE_NAME := "rmnet0"

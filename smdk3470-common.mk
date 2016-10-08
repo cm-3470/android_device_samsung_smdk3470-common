@@ -101,10 +101,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.telephony.ril_class=Exynos3470RIL
 
-# telephony-ext
-PRODUCT_PACKAGES += telephony-ext
-PRODUCT_BOOT_JARS += telephony-ext
-
 # Set bluetooth soc to rome (TODO: check if "cherokee" or "rome")
 PRODUCT_PROPERTY_OVERRIDES += \
     qcom.bluetooth.soc=rome

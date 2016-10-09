@@ -35,6 +35,22 @@ LOCAL_SHARED_LIBRARIES := liblog libcutils libtinyalsa libdl libhardware
 include $(BUILD_SHARED_LIBRARY)
 
 
+# Audio Zoom Dummy
+# Samsungs Lollipop implementation contains text relocations
+# which are not supported in Android N anymore.
+# Use a dummy implementation instead.
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := libsamsungRecord_zoom
+LOCAL_MODULE_TAGS := optional
+
+LOCAL_SRC_FILES := audio_zoom.cpp
+
+LOCAL_SHARED_LIBRARIES := liblog
+
+include $(BUILD_SHARED_LIBRARY)
+
+
 # Stock Audio HAL
 include $(CLEAR_VARS)
 

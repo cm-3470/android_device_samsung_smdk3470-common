@@ -1,0 +1,36 @@
+From bcab0dbe2cd168664c1151c014d95df4d732b3a7 Mon Sep 17 00:00:00 2001
+From: Tobias Gunkel <hennymcc@yahoo.de>
+Date: Mon, 10 Oct 2016 21:11:00 +0200
+Subject: [PATCH] telephony: allow broadcasts from Samsung RIL
+
+RILD triggers message broadcasts using the UNSOL_AM command. These
+commands are executed by RILJ. As of Android NG message broadcasts are
+only allowed, if the intents are in the protected-broadcast whitelist.
+Otherwise the VM will be terminated.
+
+Add the intents used by Samsungs RIL to the protected-broadcast
+whitelist.
+
+Change-Id: Idd1bc1c9c68d29ac4a36a9b09a3a5fc5c28af3ee
+---
+ AndroidManifest.xml | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 0c07e8c..40b2219 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -61,6 +61,10 @@
+     <protected-broadcast android:name= "android.intent.action.REQUEST_NETWORK_FAILED" />
+     <protected-broadcast android:name= "com.android.intent.isim_refresh" />
+ 
++    <protected-broadcast android:name= "com.samsung.intent.action.WB_AMR" />
++    <protected-broadcast android:name= "android.intent.action.pcmclkctrl" />
++    <protected-broadcast android:name= "android.intent.action.PHONE_EXSTATE_CHANGED" />
++
+     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+     <uses-permission android:name="android.permission.CALL_PHONE" />
+     <uses-permission android:name="android.permission.CALL_PRIVILEGED" />
+-- 
+2.7.4
+

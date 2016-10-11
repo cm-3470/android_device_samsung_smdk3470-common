@@ -36,6 +36,7 @@ PRODUCT_PACKAGES += \
 # needed by stock audio-hal
 PRODUCT_PACKAGES += \
     audio.vendor.universal3470 \
+    libsamsungRecord_zoom \
     default_gain.conf \
     tinyucm.conf
 

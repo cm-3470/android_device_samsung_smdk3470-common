@@ -1,0 +1,28 @@
+From 6444b6106bf47215f9fb68dd35d105881f2f5135 Mon Sep 17 00:00:00 2001
+From: Kyle Repinski <repinski23@gmail.com>
+Date: Wed, 31 Aug 2016 01:04:02 -0500
+Subject: [PATCH] Fix RIL_CardStatus_v5 Parceling.
+
+The difference between a v5 and v6 CardStatus response is the addition
+of ims_subscription_app_index. In previous releases libril added a -1
+to the Parcel in its place for transparent handling of GET_SIM_STATUS
+everywhere else regardless of v5 or v6 responses, but it was erroneously
+removed in change I4e53c6125995064b8ac0cdfc9376ef2cefe69ec8
+
+Change-Id: I078b61d2f6dc28f738e8eb87f51193fa0bd94c7d
+---
+ ril/libril/ril.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ril/libril/ril.cpp b/ril/libril/ril.cpp
+index fe92ce3..58dcc9a 100755
+--- a/ril/libril/ril.cpp
++++ b/ril/libril/ril.cpp
+@@ -3706,6 +3706,7 @@ static void responseSimStatusV5(Parcel &p, void *response) {
+     p.writeInt32(p_cur->universal_pin_state);
+     p.writeInt32(p_cur->gsm_umts_subscription_app_index);
+     p.writeInt32(p_cur->cdma_subscription_app_index);
++    p.writeInt32(-1);
+ 
+     sendSimStatusAppInfo(p, p_cur->num_applications, p_cur->applications);
+ }

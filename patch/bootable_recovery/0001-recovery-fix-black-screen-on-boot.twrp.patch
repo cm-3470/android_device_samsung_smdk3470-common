@@ -1,4 +1,4 @@
-From ffa2da67ea77a3a07a87370ad06a4841d575b1d1 Mon Sep 17 00:00:00 2001
+From 8455d3c7858a2e79d83af8cae581de7d5acea671 Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Tue, 9 Feb 2016 22:08:49 +0100
 Subject: [PATCH] recovery: fix black screen on boot
@@ -9,7 +9,7 @@ Change-Id: I017b4c936152805524a77bc61dca54c68f92ff6c
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/minuitwrp/Android.mk b/minuitwrp/Android.mk
-index 811685c..ce8e927 100644
+index 5124666..0ec6f15 100644
 --- a/minuitwrp/Android.mk
 +++ b/minuitwrp/Android.mk
 @@ -134,8 +134,8 @@ ifneq ($(TARGET_RECOVERY_OVERSCAN_PERCENT),)
@@ -21,8 +21,8 @@ index 811685c..ce8e927 100644
 +ifeq ($(TW_NO_SCREEN_BLANK), true)
 +  LOCAL_CFLAGS += -DTW_NO_SCREEN_BLANK
  endif
- 
- ifeq ($(BOARD_HAS_FLIPPED_SCREEN), true)
+ ifeq ($(TW_FBIOPAN), true)
+     LOCAL_CFLAGS += -DTW_FBIOPAN
 -- 
-1.9.1
+2.7.4
 

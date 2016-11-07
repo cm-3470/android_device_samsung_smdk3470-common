@@ -118,6 +118,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
     ro.opengles.version=131072 \
     ro.zygote.disable_gl_preload=true
 
+# Camera HAL1 compatibility
+PRODUCT_PROPERTY_OVERRIDES += \
+    media.stagefright.legacyencoder=true \
+    media.stagefright.less-secure=true
+
 # USB Accesory
 PRODUCT_PACKAGES += \
     com.android.future.usb.accessory

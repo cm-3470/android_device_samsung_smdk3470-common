@@ -21,8 +21,8 @@ for device in kminilte degaslte; do
     # add audioserver to the list of allowed services to connect to sec-ril.
     # change UID from 0x3E8 (mediaserver) to 0x411 (audioserver)
     replace_all '\/system\/bin\/mwlan_helper' '\/system\/bin\/audioserver\0' ${VENDOR_DIR}/lib/libsec-ril.so
-    #mwlan_helper_addr="\x{2C}\x{EC}\x{23}\x{00}" # G800FXXU1BPE3
-    mwlan_helper_addr="\x{34}\x{EC}\x{23}\x{00}" # G800FXXU1BOL4
+    mwlan_helper_addr="\x{2C}\x{EC}\x{23}\x{00}" # G800FXXU1BPE3
+    #mwlan_helper_addr="\x{34}\x{EC}\x{23}\x{00}" # G800FXXU1BOL4
     postfix="\x{00}\x{00}\x{FF}\x{FF}\x{FF}\x{FF}$mwlan_helper_addr"
     replace_all "\x{E8}\x{03}$postfix" "\x{11}\x{04}$postfix" ${VENDOR_DIR}/lib/libsec-ril.so 
 

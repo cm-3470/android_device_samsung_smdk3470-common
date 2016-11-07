@@ -1,4 +1,4 @@
-From 711239fcd9ae657301e8dda2d38e8b5335098538 Mon Sep 17 00:00:00 2001
+From fc120a5f653506245bebb94f1811766e981e1273 Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Sun, 8 Nov 2015 11:13:34 +0100
 Subject: [PATCH] fix "cannot locate symbol
@@ -7,36 +7,42 @@ Subject: [PATCH] fix "cannot locate symbol
 
 Change-Id: Ia786d7c9874c0a2e5a5540f9068264c39d550056
 ---
- include/media/stagefright/MediaBufferGroup.h         | 4 +++-
- media/libstagefright/foundation/MediaBufferGroup.cpp | 5 +++++
- 2 files changed, 8 insertions(+), 1 deletion(-)
+ include/media/stagefright/MediaBufferGroup.h         |  5 ++++-
+ media/libstagefright/foundation/MediaBufferGroup.cpp | 10 ++++++++++
+ 2 files changed, 14 insertions(+), 1 deletion(-)
 
 diff --git a/include/media/stagefright/MediaBufferGroup.h b/include/media/stagefright/MediaBufferGroup.h
-index 7ca3fa1..5fdc2e3 100644
+index 7ca3fa1..02d28f6 100644
 --- a/include/media/stagefright/MediaBufferGroup.h
 +++ b/include/media/stagefright/MediaBufferGroup.h
-@@ -43,7 +43,9 @@ public:
+@@ -43,7 +43,10 @@ public:
      // If requestedSize is > 0, the returned MediaBuffer should have buffer
      // size of at least requstedSize.
      status_t acquire_buffer(
 -            MediaBuffer **buffer, bool nonBlocking = false, size_t requestedSize = 0);
-+            MediaBuffer **buffer, bool nonBlocking, size_t requestedSize = 0);
++            MediaBuffer **buffer, bool nonBlocking, size_t requestedSize);
 +
 +    status_t acquire_buffer(MediaBuffer **buffer);
++    status_t acquire_buffer(MediaBuffer **buffer, bool nonBlocking);
  
  protected:
      virtual void signalBufferReturned(MediaBuffer *buffer);
 diff --git a/media/libstagefright/foundation/MediaBufferGroup.cpp b/media/libstagefright/foundation/MediaBufferGroup.cpp
-index 9022324..6b10915 100644
+index 9022324..ecfa13d 100644
 --- a/media/libstagefright/foundation/MediaBufferGroup.cpp
 +++ b/media/libstagefright/foundation/MediaBufferGroup.cpp
-@@ -124,6 +124,11 @@ exit:
+@@ -124,6 +124,16 @@ exit:
      return OK;
  }
  
 +status_t MediaBufferGroup::acquire_buffer(
 +        MediaBuffer **out) {
-+    return acquire_buffer(out, false);
++    return acquire_buffer(out, false, 0);
++}
++
++status_t MediaBufferGroup::acquire_buffer(
++        MediaBuffer **out, bool nonBlocking) {
++    return acquire_buffer(out, nonBlocking, 0);
 +}
 +
  void MediaBufferGroup::signalBufferReturned(MediaBuffer *) {

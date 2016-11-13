@@ -102,16 +102,6 @@ static int check_vendor_module()
 
 #define KEY_VIDEO_HFR_VALUES "video-hfr-values"
 
-// nv12-venus is needed for blobs, but
-// framework has no idea what it is
-#define PIXEL_FORMAT_NV12_VENUS "nv12-venus"
-
-static bool is_4k_video(CameraParameters &params) {
-    int video_width, video_height;
-    params.getVideoSize(&video_width, &video_height);
-    ALOGV("%s : VideoSize is %x", __FUNCTION__, video_width * video_height);
-    return video_width * video_height == 3840 * 2160;
-}
 
 static char *camera_fixup_getparams(int __attribute__((unused)) id,
     const char *settings)
@@ -127,18 +117,6 @@ static char *camera_fixup_getparams(int __attribute__((unused)) id,
     const char *recordHint = params.get(CameraParameters::KEY_RECORDING_HINT);
     bool videoMode = recordHint ? !strcmp(recordHint, "true") : false;
 
-    //Hide nv12-venus from Android.
-    if (strcmp (params.getPreviewFormat(), PIXEL_FORMAT_NV12_VENUS) == 0)
-          params.setPreviewFormat(params.PIXEL_FORMAT_YUV420SP);
-
-    const char *videoSizeValues = params.get(
-            CameraParameters::KEY_SUPPORTED_VIDEO_SIZES);
-    if (videoSizeValues) {
-        char videoSizes[strlen(videoSizeValues) + 10 + 1];
-        sprintf(videoSizes, "3840x2160,%s", videoSizeValues);
-        params.set(CameraParameters::KEY_SUPPORTED_VIDEO_SIZES,
-                videoSizes);
-    }
 
     /* If the vendor has HFR values but doesn't also expose that
      * this can be turned off, fixup the params to tell the Camera
@@ -152,9 +130,7 @@ static char *camera_fixup_getparams(int __attribute__((unused)) id,
     }
 
     /* Enforce video-snapshot-supported to true */
-    if (videoMode) {
-        params.set(CameraParameters::KEY_VIDEO_SNAPSHOT_SUPPORTED, "true");
-    }
+    params.set(android::CameraParameters::KEY_VIDEO_SNAPSHOT_SUPPORTED, "true");
 
     ALOGV("%s: Fixed parameters:", __FUNCTION__);
     params.dump();
@@ -311,15 +287,6 @@ static int camera_start_recording(struct camera_device *device)
 
     ALOGV("%s->%08X->%08X", __FUNCTION__, (uintptr_t)device,
             (uintptr_t)(((wrapper_camera_device_t*)device)->vendor));
-
-    CameraParameters parameters;
-    parameters.unflatten(String8(camera_get_parameters(device)));
-
-    if (is_4k_video(parameters)) {
-        ALOGV("%s : UHD detected, switching preview-format to nv12-venus", __FUNCTION__);
-        parameters.setPreviewFormat(PIXEL_FORMAT_NV12_VENUS);
-        camera_set_parameters(device, strdup(parameters.flatten().string()));
-    }
 
     return VENDOR_CALL(device, start_recording);
 }

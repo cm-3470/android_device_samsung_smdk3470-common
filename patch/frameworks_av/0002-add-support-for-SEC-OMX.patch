@@ -1,0 +1,25 @@
+From adfe5c56f51d7af65d5bafc7ff27b997d0b9d7a4 Mon Sep 17 00:00:00 2001
+From: Tobias Gunkel <hennymcc@yahoo.de>
+Date: Sun, 13 Nov 2016 19:05:47 +0100
+Subject: [PATCH] add support for SEC OMX
+
+Change-Id: Ia6e2779a0308d8304e205f2f1ffee9105c916990
+---
+ media/libstagefright/omx/OMXMaster.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libstagefright/omx/OMXMaster.cpp b/media/libstagefright/omx/OMXMaster.cpp
+index 019dba6..ac5b4f0 100644
+--- a/media/libstagefright/omx/OMXMaster.cpp
++++ b/media/libstagefright/omx/OMXMaster.cpp
+@@ -65,6 +65,7 @@ OMXMaster::~OMXMaster() {
+ 
+ void OMXMaster::addVendorPlugin() {
+     addPlugin("libstagefrighthw.so");
++    addPlugin("libsomxcore.so");
+ }
+ 
+ void OMXMaster::addUserPlugin() {
+-- 
+2.7.4
+

@@ -39,6 +39,9 @@ BOARD_FLASH_BLOCK_SIZE := 131072
 TARGET_USERIMAGES_USE_EXT4 := true
 TARGET_USERIMAGES_USE_F2FS := true
 
+# Use dlmalloc instead of jemalloc for mallocs
+MALLOC_IMPL := dlmalloc
+
 # Include path
 TARGET_SPECIFIC_HEADER_PATH += device/samsung/smdk3470-common/include
 
@@ -63,13 +66,14 @@ BOARD_HAVE_BLUETOOTH_BCM := true
 BOARD_BLUEDROID_VENDOR_CONF := device/samsung/smdk3470-common/bluetooth/vnd_smdk3470.txt
 
 # Graphics
+NUM_FRAMEBUFFER_SURFACE_BUFFERS := 3
 USE_OPENGL_RENDERER := true
 BOARD_EGL_CFG := device/samsung/smdk3470-common/egl/egl.cfg
 
 # Camera
 TARGET_HAS_LEGACY_CAMERA_HAL1 := true
 COMMON_GLOBAL_CFLAGS += -DCAMERA_VENDOR_L_COMPAT
-#BOARD_USE_SAMSUNG_CAMERAFORMAT_NV21 := true
+BOARD_USE_SAMSUNG_CAMERAFORMAT_NV21 := true
 
 # RIL
 BOARD_PROVIDES_LIBRIL := true

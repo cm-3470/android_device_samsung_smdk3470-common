@@ -39,6 +39,8 @@ BOARD_FLASH_BLOCK_SIZE := 131072
 TARGET_USERIMAGES_USE_EXT4 := true
 TARGET_USERIMAGES_USE_F2FS := true
 
+BOARD_CUSTOM_BOOTIMG_MK := device/samsung/smdk3470-common/mkbootimg.mk
+
 # Use dlmalloc instead of jemalloc for mallocs
 MALLOC_SVELTE := true
 

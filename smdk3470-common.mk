@@ -87,6 +87,10 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
     frameworks/native/data/etc/handheld_core_hardware.xml:system/etc/permissions/handheld_core_hardware.xml
 
+# Browser
+PRODUCT_PACKAGES += \
+    Gello
+
 # IPv6 tethering
 PRODUCT_PACKAGES += \
     ebtables \

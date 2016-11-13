@@ -46,7 +46,11 @@ public:
 
     ~SamsungRecord_Zoom();
 
+#ifdef AUDIO_USES_KK_LIBS
+    void Init(int unk1);
+#else
     void Init(int unk1, float unk2);
+#endif
 
     void Process(short *in, short *out, float zoom, unsigned int unk);
 };
@@ -57,11 +61,18 @@ SamsungRecord_Zoom::SamsungRecord_Zoom() {
 SamsungRecord_Zoom::~SamsungRecord_Zoom() {
 }
 
+#ifdef AUDIO_USES_KK_LIBS
+void SamsungRecord_Zoom::Init(int unk1) {
+    UNUSED(unk1);
+    ALOGE("%s called", __FUNCTION__);
+}
+#else
 void SamsungRecord_Zoom::Init(int unk1, float unk2) {
     UNUSED(unk1);
     UNUSED(unk2);
     ALOGE("%s called", __FUNCTION__);
 }
+#endif
 
 void SamsungRecord_Zoom::Process(short *in, short *out, float zoom, unsigned int unk) {
     UNUSED(in);

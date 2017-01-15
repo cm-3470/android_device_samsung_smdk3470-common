@@ -32,6 +32,17 @@
 #include <system/audio.h>
 #include <hardware/audio.h>
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
+#define CALL_STATE_CS_VOICE_OR_CP_VIDEO_CALL_OFF 1
+#define CALL_STATE_CS_VOICE_OR_CP_VIDEO_CALL_ON  2
+#define CALL_STATE_VOLTE_HANDOVER_OR_VOLTE_AP_VIDEO_CALL_OFF 256
+#define CALL_STATE_VOLTE_AP_VIDEO_CALL_ON 1024
+#define CALL_STATE_VOLTE_CP_VOICE_VIDEO_CALL_OFF 257
+#define CALL_STATE_VOLTE_CP_VOICE_CALL_ON 514
+#define CALL_STATE_VOLTE_CP_VIDEO_CALL_ON 1026
+
 /*
 namespace wrapper {
     struct audio_hw_device;
@@ -408,8 +419,14 @@ static int adev_get_master_mute(struct audio_hw_device *dev, bool *muted)
 
 static int adev_set_mode(struct audio_hw_device *dev, audio_mode_t mode)
 {
-    if (mode == AUDIO_MODE_IN_CALL) {
-        WRAPPED_DEVICE_CALL(dev, set_parameters, "realcall=on");
+    switch (mode)
+    {
+        case AUDIO_MODE_IN_CALL:
+            WRAPPED_DEVICE_CALL(dev, set_parameters, "CallState=" STR(CALL_STATE_CS_VOICE_OR_CP_VIDEO_CALL_ON));
+            break;
+        case AUDIO_MODE_NORMAL:
+            WRAPPED_DEVICE_CALL(dev, set_parameters, "CallState=" STR(CALL_STATE_CS_VOICE_OR_CP_VIDEO_CALL_OFF));
+            break;
     }
     RETURN_WRAPPED_DEVICE_CALL(dev, set_mode, mode);
 }

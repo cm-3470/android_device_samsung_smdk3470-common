@@ -104,6 +104,11 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     libsecril-client
 
+# Deps for libsec-ril.so and audio.primary.universal3470.so
+PRODUCT_PACKAGES += \
+    libxml2 \
+    libprotobuf-cpp-full
+
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.telephony.ril_class=Exynos3470RIL
 

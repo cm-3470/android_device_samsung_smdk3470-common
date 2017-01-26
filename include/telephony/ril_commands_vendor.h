@@ -15,63 +15,38 @@
 ** limitations under the License.
 */
     {10000, NULL, NULL},
-    {10001, NULL, NULL},
-    {RIL_REQUEST_GET_CELL_BROADCAST_CONFIG, dispatchVoid, responseVoid},
-    {10003, NULL, NULL},
-    {10004, NULL, NULL},
-    {RIL_REQUEST_SEND_ENCODED_USSD, dispatchVoid, responseVoid},
-    {RIL_REQUEST_SET_PDA_MEMORY_STATUS, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_PHONEBOOK_STORAGE_INFO, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_PHONEBOOK_ENTRY, dispatchVoid, responseVoid},
-    {RIL_REQUEST_ACCESS_PHONEBOOK_ENTRY, dispatchVoid, responseVoid},
-    {RIL_REQUEST_DIAL_VIDEO_CALL, dispatchVoid, responseVoid},
-    {RIL_REQUEST_CALL_DEFLECTION, dispatchVoid, responseVoid},
-    {10012, NULL, NULL},
-    {RIL_REQUEST_USIM_PB_CAPA, dispatchVoid, responseVoid},
-    {RIL_REQUEST_LOCK_INFO, dispatchVoid, responseVoid},
-    {10015, NULL, NULL},
-    {RIL_REQUEST_DIAL_EMERGENCY, dispatchDial, responseVoid},
-    {10017, NULL, NULL},
-    {RIL_REQUEST_STK_SIM_INIT_EVENT, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_LINE_ID, dispatchVoid, responseVoid},
-    {RIL_REQUEST_SET_LINE_ID, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_SERIAL_NUMBER, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_MANUFACTURE_DATE_NUMBER, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_BARCODE_NUMBER, dispatchVoid, responseVoid},
-    {RIL_REQUEST_UICC_GBA_AUTHENTICATE_BOOTSTRAP, dispatchVoid, responseVoid},
-    {RIL_REQUEST_UICC_GBA_AUTHENTICATE_NAF, dispatchVoid, responseVoid},
-    {10026, NULL, NULL},
-    {10027, NULL, NULL},
-    {10028, NULL, NULL},
-    {10029, NULL, NULL},
-    {10030, NULL, NULL},
-    {RIL_REQUEST_MODIFY_CALL_INITIATE, dispatchVoid, responseVoid},
-    {RIL_REQUEST_MODIFY_CALL_CONFIRM, dispatchVoid, responseVoid},
-    {RIL_REQUEST_SAFE_MODE, dispatchVoid, responseVoid},
-    {RIL_REQUEST_SET_VOICE_DOMAIN_PREF, dispatchVoid, responseVoid},
-    {RIL_REQUEST_PS_ATTACH, dispatchVoid, responseVoid},
-    {RIL_REQUEST_PS_DETACH, dispatchVoid, responseVoid},
-    {RIL_REQUEST_ACTIVATE_DATA_CALL, dispatchVoid, responseVoid},
-    {RIL_REQUEST_CHANGE_SIM_PERSO, dispatchVoid, responseVoid},
-    {RIL_REQUEST_ENTER_SIM_PERSO, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_TIME_INFO, dispatchVoid, responseVoid},
-    {RIL_REQUEST_CDMA_SEND_SMS_EXPECT_MORE, dispatchVoid, responseSMS},/*???*/
-    {RIL_REQUEST_OMADM_SETUP_SESSION, dispatchVoid, responseVoid},
-    {RIL_REQUEST_OMADM_SERVER_START_SESSION, dispatchVoid, responseVoid},
-    {RIL_REQUEST_OMADM_CLIENT_START_SESSION, dispatchVoid, responseVoid},
-    {RIL_REQUEST_OMADM_SEND_DATA, dispatchVoid, responseVoid},
-    {RIL_REQUEST_CDMA_GET_DATAPROFILE, dispatchVoid, responseVoid},
-    {RIL_REQUEST_CDMA_SET_DATAPROFILE, dispatchVoid, responseVoid},
-    {RIL_REQUEST_CDMA_GET_SYSTEMPROPERTIES, dispatchVoid, responseVoid},
-    {RIL_REQUEST_CDMA_SET_SYSTEMPROPERTIES, dispatchVoid, responseVoid},
-    {RIL_REQUEST_SEND_SMS_COUNT, dispatchVoid, responseVoid},
-    {RIL_REQUEST_SEND_SMS_MSG, dispatchVoid, responseVoid},
-    {RIL_REQUEST_SEND_SMS_MSG_READ_STATUS, dispatchVoid, responseVoid},
-    {RIL_REQUEST_MODEM_HANGUP, dispatchVoid, responseVoid},
-    {RIL_REQUEST_SET_SIM_POWER, dispatchVoid, responseVoid},
-    {RIL_REQUEST_SET_PREFERRED_NETWORK_LIST, dispatchVoid, responseVoid},
-    {RIL_REQUEST_GET_PREFERRED_NETWORK_LIST, dispatchVoid, responseVoid},
-    {RIL_REQUEST_HANGUP_VT, dispatchVoid, responseVoid},
-    {RIL_REQUEST_HOLD, dispatchVoid, responseVoid},
-    {RIL_REQUEST_SET_LTE_BAND_MODE, dispatchVoid, responseVoid},
-    {RIL_REQUEST_QUERY_LOCK_NETWORKS, dispatchVoid, responseVoid},
+    {RIL_REQUEST_DIAL_EMERGENCY_CALL, dispatchDial, responseVoid}, // 10001
+    {RIL_REQUEST_CALL_DEFLECTION, dispatchVoid, responseVoid}, // 10002
+    {RIL_REQUEST_MODIFY_CALL_INITIATE, dispatchVoid, responseVoid}, // 10003
+    {RIL_REQUEST_MODIFY_CALL_CONFIRM, dispatchVoid, responseVoid}, // 10004
+    {RIL_REQUEST_SET_VOICE_DOMAIN_PREF, dispatchVoid, responseVoid}, // 10005
+    {RIL_REQUEST_SAFE_MODE, dispatchVoid, responseVoid}, // 10006
+    {RIL_REQUEST_SET_TRANSMIT_POWER, dispatchVoid, responseVoid}, // 10007
+    {RIL_REQUEST_GET_CELL_BROADCAST_CONFIG, dispatchVoid, responseVoid}, // 10008
+    {RIL_REQUEST_GET_PHONEBOOK_STORAGE_INFO, dispatchVoid, responseVoid}, // 10009
+    {RIL_REQUEST_GET_PHONEBOOK_ENTRY, dispatchVoid, responseVoid}, // 10010
+    {RIL_REQUEST_ACCESS_PHONEBOOK_ENTRY, dispatchVoid, responseVoid}, // 10011
+    {RIL_REQUEST_USIM_PB_CAPA, dispatchVoid, responseVoid}, // 10012
+    {RIL_REQUEST_LOCK_INFO, dispatchVoid, responseVoid}, // 10013
+    {RIL_REQUEST_STK_SIM_INIT_EVENT, dispatchVoid, responseVoid}, // 10014
+    {RIL_REQUEST_SET_PREFERRED_NETWORK_LIST, dispatchVoid, responseVoid}, // 10015
+    {RIL_REQUEST_GET_PREFERRED_NETWORK_LIST, dispatchDial, responseVoid}, // 10016
+    {RIL_REQUEST_CHANGE_SIM_PERSO, dispatchVoid, responseVoid}, // 10017
+    {RIL_REQUEST_ENTER_SIM_PERSO, dispatchVoid, responseVoid}, // 10018
+    {RIL_REQUEST_SEND_ENCODED_USSD, dispatchVoid, responseVoid}, // 10019
+    {RIL_REQUEST_CDMA_SEND_SMS_EXPECT_MORE, dispatchVoid, responseSMS}, // 10020
+    {10021, NULL, NULL}, // 10021
+    {RIL_REQUEST_REQUEST_HOLD, dispatchVoid, responseVoid}, // 10022
+    {RIL_REQUEST_SET_SIM_POWER, dispatchVoid, responseVoid}, // 10023
+    {RIL_REQUEST_GET_ACB_INFO, dispatchVoid, responseVoid}, // 10024
+    {RIL_REQUEST_UICC_GBA_AUTHENTICATE_BOOTSTRAP, dispatchVoid, responseVoid}, // 10025
+    {RIL_REQUEST_UICC_GBA_AUTHENTICATE_NAF, dispatchVoid, responseVoid}, // 10026
+    {RIL_REQUEST_GET_INCOMING_COMMUNICATION_BARRING, dispatchVoid, responseVoid}, // 10027
+    {RIL_REQUEST_SET_INCOMING_COMMUNICATION_BARRING, dispatchVoid, responseVoid}, // 10028
+    {RIL_REQUEST_QUERY_CNAP, dispatchVoid, responseVoid}, // 10029
+    {RIL_REQUEST_SET_TRANSFER_CALL, dispatchVoid, responseVoid}, // 10030
+    {RIL_REQUEST_GET_DISABLE_2G, dispatchVoid, responseVoid}, // 10031
+    {RIL_REQUEST_SET_DISABLE_2G, dispatchVoid, responseVoid}, // 10032
+    {RIL_REQUEST_REFRESH_NITZ_TIME, dispatchVoid, responseVoid}, // 10033
+    {RIL_REQUEST_ENABLE_UNSOL_RESPONSE, dispatchVoid, responseVoid}, // 10034
+

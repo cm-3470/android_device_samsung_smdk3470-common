@@ -32,6 +32,8 @@ import com.android.internal.telephony.uicc.IccUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * RIL customization for Exynos3470 based devices.
@@ -42,14 +44,10 @@ import java.util.Collections;
  */
 public class Exynos3470RIL extends RIL {
 
-    private static final int RIL_REQUEST_DIAL_EMERGENCY = 10016;
+    private static final int RIL_REQUEST_DIAL_EMERGENCY = 10001;
     private static final int RIL_UNSOL_STK_CALL_CONTROL_RESULT = 11003;
     private static final int RIL_UNSOL_DEVICE_READY_NOTI = 11008;
     private static final int RIL_UNSOL_AM = 11010;
-    private static final int RIL_UNSOL_DATA_SUSPEND_RESUME = 11012;
-    private static final int RIL_UNSOL_WB_AMR_STATE = 11017;
-    private static final int RIL_UNSOL_PCMCLOCK_STATE = 11022;
-    private static final int RIL_UNSOL_SRVCC_HANDOVER = 11029;
 
     private AudioManager mAudioManager;
 
@@ -221,27 +219,16 @@ public class Exynos3470RIL extends RIL {
             case RIL_UNSOL_AM:
                 ret = responseString(p);
                 String amString = (String) ret;
+
+                checkWbAmrEvent(amString);
+
                 Rlog.d(RILJ_LOG_TAG, "Executing AM: " + amString);
-                
                 try {
                     Runtime.getRuntime().exec("am " + amString);
                 } catch (IOException e) {
                     e.printStackTrace();
                     Rlog.e(RILJ_LOG_TAG, "am " + amString + " could not be executed.");
                 }
-                break;
-            case RIL_UNSOL_DATA_SUSPEND_RESUME:
-                ret = responseInts(p);
-                break;
-            case RIL_UNSOL_WB_AMR_STATE:
-                ret = responseInts(p);
-                setWbAmr(((int[])ret)[0]);
-                break;
-            case RIL_UNSOL_SRVCC_HANDOVER:
-                ret = responseVoid(p);
-                break;
-            case RIL_UNSOL_PCMCLOCK_STATE:
-                ret = responseInts(p);
                 break;
             default:
                 // Rewind the Parcel
@@ -253,16 +240,26 @@ public class Exynos3470RIL extends RIL {
         }
     }
     
+    private final static Pattern WB_AMR_EVENT_PATTERN = 
+        Pattern.compile("broadcast -a com.samsung.intent.action.WB_AMR -f \\d+ --ei EXTRA_STATE (\\d)");
+
+    private void checkWbAmrEvent(String amString) {
+        Matcher matcher = WB_AMR_EVENT_PATTERN.matcher(amString);
+        if (matcher.find()) {
+            setWbAmr(matcher.group(1).equals("1"));
+        }
+    }
+
     /**
      * Set audio parameter "wb_amr" for HD-Voice (Wideband AMR).
      *
-     * @param state: 0 = unsupported, 1 = supported.
+     * @param state: false = unsupported, true = supported.
      */
-    private void setWbAmr(int state) {
-        if (state == 1) {
+    private void setWbAmr(boolean supported) {
+        if (supported) {
             Rlog.d(RILJ_LOG_TAG, "setWbAmr(): setting audio parameter - wb_amr=on");
             mAudioManager.setParameters("wb_amr=on");
-        }else if (state == 0) {
+        } else {
             Rlog.d(RILJ_LOG_TAG, "setWbAmr(): setting audio parameter - wb_amr=off");
             mAudioManager.setParameters("wb_amr=off");
         }

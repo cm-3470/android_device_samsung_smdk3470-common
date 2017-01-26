@@ -1,0 +1,26 @@
+From 9e667844d4fe603af2585571dbdfb3a121bbb853 Mon Sep 17 00:00:00 2001
+From: Tobias Gunkel <hennymcc@yahoo.de>
+Date: Mon, 23 Jan 2017 00:49:59 +0100
+Subject: [PATCH] libhardware: adjust hwcomposer layer size to MM libs
+
+Change-Id: I4199e465f00cd5fa80bdbd670011416efb37d5a0
+---
+ include/hardware/hwcomposer.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/hardware/hwcomposer.h b/include/hardware/hwcomposer.h
+index aa466b3..cb9162c 100644
+--- a/include/hardware/hwcomposer.h
++++ b/include/hardware/hwcomposer.h
+@@ -336,7 +336,7 @@ typedef struct hwc_layer_1 {
+      * For 32-bit mode, this struct is 96 bytes, and needs to be padded as such
+      * to maintain binary compatibility.
+      */
+-    uint8_t reserved[96 - 84];
++    uint8_t reserved[104 - 84];
+ #endif
+ 
+ } hwc_layer_1_t;
+-- 
+2.7.4
+

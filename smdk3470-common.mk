@@ -60,6 +60,10 @@ PRODUCT_PACKAGES += \
     camera.vendor.universal3470 \
     Snap
 
+# Browser
+PRODUCT_PACKAGES += \
+    Gello
+
 # Wifi
 PRODUCT_PACKAGES += \
     dhcpcd.conf \

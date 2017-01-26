@@ -42,7 +42,7 @@ TARGET_USERIMAGES_USE_F2FS := true
 BOARD_CUSTOM_BOOTIMG_MK := device/samsung/smdk3470-common/mkbootimg.mk
 
 # Use dlmalloc instead of jemalloc for mallocs
-MALLOC_SVELTE := true
+#MALLOC_SVELTE := true
 
 # Include path
 TARGET_SPECIFIC_HEADER_PATH += device/samsung/smdk3470-common/include

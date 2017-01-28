@@ -47,6 +47,7 @@ public class Exynos3470RIL extends RIL {
     private static final int RIL_REQUEST_DIAL_EMERGENCY = 10001;
     private static final int RIL_UNSOL_STK_CALL_CONTROL_RESULT = 11003;
     private static final int RIL_UNSOL_DEVICE_READY_NOTI = 11008;
+    private static final int RIL_UNSOL_STK_SEND_SMS_RESULT = 11002;
     private static final int RIL_UNSOL_AM = 11010;
 
     private AudioManager mAudioManager;
@@ -214,6 +215,9 @@ public class Exynos3470RIL extends RIL {
                 ret = responseVoid(p);
                 break;
             case RIL_UNSOL_DEVICE_READY_NOTI:
+                ret = responseVoid(p);
+                break;
+            case RIL_UNSOL_STK_SEND_SMS_RESULT:
                 ret = responseVoid(p);
                 break;
             case RIL_UNSOL_AM:

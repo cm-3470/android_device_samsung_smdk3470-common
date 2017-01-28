@@ -1,15 +1,15 @@
-From b48b543dfe7bf025979fb3384fe70a4ad474b9c4 Mon Sep 17 00:00:00 2001
+From 5436652fd78039820a72a49938d9af80dc4963f5 Mon Sep 17 00:00:00 2001
 From: Tobias Gunkel <hennymcc@yahoo.de>
 Date: Wed, 25 Jan 2017 23:49:55 +0100
 Subject: [PATCH] ril: adjust to G800F MM ril (G800FXXU1CPK5)
 
 Change-Id: Idb3411b072f27bb7f270ba380f2234280c305464
 ---
- include/telephony/ril.h | 92 +++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 92 insertions(+)
+ include/telephony/ril.h | 93 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 93 insertions(+)
 
 diff --git a/include/telephony/ril.h b/include/telephony/ril.h
-index 2e71367..10b8e83 100644
+index 2e71367..90f253a 100644
 --- a/include/telephony/ril.h
 +++ b/include/telephony/ril.h
 @@ -31,6 +31,7 @@
@@ -51,7 +51,15 @@ index 2e71367..10b8e83 100644
  } RIL_Call;
  
  /* Deprecated, use RIL_Data_Call_Response_v6 */
-@@ -503,6 +515,7 @@ typedef struct {
+@@ -449,6 +461,7 @@ typedef struct {
+     int errorCode;    /* See 3GPP 27.005, 3.2.5 for GSM/UMTS,
+                          3GPP2 N.S0005 (IS-41C) Table 171 for CDMA,
+                          -1 if unknown or not applicable*/
++    int unknown;      /* unknown parameter */
+ } RIL_SMS_Response;
+ 
+ /** Used by RIL_REQUEST_WRITE_SMS_TO_SIM */
+@@ -503,6 +516,7 @@ typedef struct {
      char *data;     /* May be NULL*/
      char *pin2;     /* May be NULL*/
      char *aidPtr;   /* AID value, See ETSI 102.221 8.1 and 101.220 4, NULL if no value. */
@@ -59,7 +67,7 @@ index 2e71367..10b8e83 100644
  } RIL_SIM_IO_v6;
  
  /* Used by RIL_REQUEST_SIM_TRANSMIT_APDU_CHANNEL and
-@@ -770,6 +783,12 @@ typedef struct
+@@ -770,6 +784,12 @@ typedef struct
    int              pin1_replaced;   /* applicable to USIM, CSIM & ISIM */
    RIL_PinState     pin1;
    RIL_PinState     pin2;
@@ -72,7 +80,7 @@ index 2e71367..10b8e83 100644
  } RIL_AppStatus;
  
  /* Deprecated, use RIL_CardStatus_v6 */
-@@ -4462,6 +4481,43 @@ typedef struct {
+@@ -4462,6 +4482,43 @@ typedef struct {
  
  /***********************************************************************/
  
@@ -116,7 +124,7 @@ index 2e71367..10b8e83 100644
  
  #define RIL_UNSOL_RESPONSE_BASE 1000
  
-@@ -5061,6 +5117,42 @@ typedef struct {
+@@ -5061,6 +5118,42 @@ typedef struct {
  
  /***********************************************************************/
  

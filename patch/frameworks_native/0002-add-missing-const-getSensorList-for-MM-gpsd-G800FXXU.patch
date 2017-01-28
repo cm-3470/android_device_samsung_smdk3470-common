@@ -1,0 +1,41 @@
+From 585e68194c42681c894a92c70a2a7b8ef87b41ae Mon Sep 17 00:00:00 2001
+From: Tobias Gunkel <hennymcc@yahoo.de>
+Date: Sat, 24 Dec 2016 16:57:54 +0100
+Subject: [PATCH] add missing const getSensorList() for MM gpsd (G800FXXU1CPK5)
+
+Change-Id: I0e09ce4d5ce09b4c6a67f5dafd2e4f6e18f4b737
+---
+ include/gui/SensorManager.h | 1 +
+ libs/gui/SensorManager.cpp  | 4 ++++
+ 2 files changed, 5 insertions(+)
+
+diff --git a/include/gui/SensorManager.h b/include/gui/SensorManager.h
+index 6c6230f..198a1e9 100644
+--- a/include/gui/SensorManager.h
++++ b/include/gui/SensorManager.h
+@@ -55,6 +55,7 @@ public:
+     ~SensorManager();
+ 
+     ssize_t getSensorList(Sensor const* const** list);
++    ssize_t getSensorList(Sensor const* const** list) const;
+     ssize_t getDynamicSensorList(Vector<Sensor>& list);
+     Sensor const* getDefaultSensor(int type);
+     sp<SensorEventQueue> createEventQueue(String8 packageName = String8(""), int mode = 0);
+diff --git a/libs/gui/SensorManager.cpp b/libs/gui/SensorManager.cpp
+index 225bfa8..ed1beaa 100644
+--- a/libs/gui/SensorManager.cpp
++++ b/libs/gui/SensorManager.cpp
+@@ -171,6 +171,10 @@ ssize_t SensorManager::getSensorList(Sensor const* const** list) {
+     return static_cast<ssize_t>(mSensors.size());
+ }
+ 
++ssize_t SensorManager::getSensorList(Sensor const* const** list) const {
++    return const_cast<SensorManager*>(this)->getSensorList(list);
++}
++
+ ssize_t SensorManager::getDynamicSensorList(Vector<Sensor> & dynamicSensors) {
+     Mutex::Autolock _l(mLock);
+     status_t err = assertStateLocked();
+-- 
+2.7.4
+

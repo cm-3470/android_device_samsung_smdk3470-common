@@ -21,6 +21,7 @@ import static com.android.internal.telephony.RILConstants.*;
 import android.content.Context;
 import android.media.AudioManager;
 import android.telephony.Rlog;
+import android.os.Handler;
 import android.os.Message;
 import android.os.Parcel;
 import android.telephony.PhoneNumberUtils;
@@ -50,7 +51,25 @@ public class Exynos3470RIL extends RIL {
     private static final int RIL_UNSOL_STK_SEND_SMS_RESULT = 11002;
     private static final int RIL_UNSOL_AM = 11010;
 
+    protected static final int EVENT_RIL_CONNECTED = 1;
+
     private AudioManager mAudioManager;
+    private ConnectionStateListener mConnectionStateListener;
+
+    private class ConnectionStateListener extends Handler {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case EVENT_RIL_CONNECTED:
+                    riljLogv("RIL connected");
+                    mAudioManager.setParameters("ril_state_connected=1");
+                    break;
+                default:
+                    riljLogv("Unknown connection event");
+                    break;
+            }
+        }
+    }
 
     public Exynos3470RIL(Context context, int networkMode, int cdmaSubscription) {
         this(context, networkMode, cdmaSubscription, null);
@@ -61,6 +80,8 @@ public class Exynos3470RIL extends RIL {
         super(context, preferredNetworkType, cdmaSubscription, instanceId);
         mAudioManager = (AudioManager)mContext.getSystemService(Context.AUDIO_SERVICE);
         mQANElements = 6;
+        mConnectionStateListener = new ConnectionStateListener();
+        registerForRilConnected(mConnectionStateListener, EVENT_RIL_CONNECTED, null); 
     }
 
     @Override

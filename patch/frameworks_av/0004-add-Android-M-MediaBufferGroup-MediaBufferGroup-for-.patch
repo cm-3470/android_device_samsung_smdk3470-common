@@ -1,0 +1,45 @@
+From 6dd57d855fd7cd57133b6471d8a2d2ce1ec618be Mon Sep 17 00:00:00 2001
+From: Tobias Gunkel <hennymcc@yahoo.de>
+Date: Sat, 18 Feb 2017 02:58:33 +0100
+Subject: [PATCH] add Android M MediaBufferGroup:MediaBufferGroup() for
+ libwvm.so
+
+Change-Id: I54da9082c98e4e82d8533d99205ec250d6da31ef
+---
+ include/media/stagefright/MediaBufferGroup.h         | 4 +++-
+ media/libstagefright/foundation/MediaBufferGroup.cpp | 4 ++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/include/media/stagefright/MediaBufferGroup.h b/include/media/stagefright/MediaBufferGroup.h
+index 3051406..96439fc 100644
+--- a/include/media/stagefright/MediaBufferGroup.h
++++ b/include/media/stagefright/MediaBufferGroup.h
+@@ -29,7 +29,9 @@ class MetaData;
+ 
+ class MediaBufferGroup : public MediaBufferObserver {
+ public:
+-    MediaBufferGroup(size_t growthLimit = 0);
++    MediaBufferGroup();
++
++    MediaBufferGroup(size_t growthLimit);
+ 
+     // create a media buffer group with preallocated buffers
+     MediaBufferGroup(size_t buffers, size_t buffer_size, size_t growthLimit = 0);
+diff --git a/media/libstagefright/foundation/MediaBufferGroup.cpp b/media/libstagefright/foundation/MediaBufferGroup.cpp
+index 54f768a..8cdd4a1 100644
+--- a/media/libstagefright/foundation/MediaBufferGroup.cpp
++++ b/media/libstagefright/foundation/MediaBufferGroup.cpp
+@@ -32,6 +32,10 @@ constexpr T MIN(const T &a, const T &b) { return a <= b ? a : b; }
+ static const size_t kSharedMemoryThreshold = MIN(
+         (size_t)MediaBuffer::kSharedMemThreshold, (size_t)(4 * 1024));
+ 
++MediaBufferGroup::MediaBufferGroup() :
++    mGrowthLimit(0) {
++}
++
+ MediaBufferGroup::MediaBufferGroup(size_t growthLimit) :
+     mGrowthLimit(growthLimit) {
+ }
+-- 
+2.7.4
+

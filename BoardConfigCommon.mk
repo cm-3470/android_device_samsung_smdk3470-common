@@ -87,6 +87,13 @@ BOARD_MODEM_TYPE := ss222
 
 # OpenMAX Video
 TARGET_OMX_LEGACY_RESCALING := true
+BOARD_USES_FIMC := true
+BOARD_USE_STOREMETADATA := true
+BOARD_USE_METADATABUFFERTYPE := true
+BOARD_USE_DMA_BUF := true
+
+# Advanced Low Power audio support
+BOARD_USE_ALP_AUDIO := true
 
 # Radio
 BOARD_RIL_CLASS := ../../../device/samsung/smdk3470-common/ril

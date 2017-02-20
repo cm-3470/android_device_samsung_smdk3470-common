@@ -17,7 +17,7 @@ LOCAL_PATH := $(call my-dir)
 # Stub sound_trigger HAL module, used for tests
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := sound_trigger.primary.universal3470	
+LOCAL_MODULE := sound_trigger.primary.universal3470
 LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_SRC_FILES := sound_trigger_hw.c
 LOCAL_SHARED_LIBRARIES := liblog libcutils

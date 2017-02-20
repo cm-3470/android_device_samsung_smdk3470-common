@@ -19,7 +19,7 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
 COMMON_PATH := device/samsung/smdk3470-common
 
 # Audio
-PRODUCT_PACKAGES := \
+PRODUCT_PACKAGES += \
     audio.a2dp.default \
     audio.primary.universal3470 \
     audio.r_submix.default \

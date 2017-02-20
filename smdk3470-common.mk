@@ -18,16 +18,16 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
 
 COMMON_PATH := device/samsung/smdk3470-common
 
+# Sound
+PRODUCT_PACKAGES += \
+    sound_trigger.primary.universal3470
+
 # Audio
 PRODUCT_PACKAGES := \
     audio.a2dp.default \
     audio.primary.universal3470 \
     audio.r_submix.default \
     audio.usb.default
-
-# Sound
-PRODUCT_PACKAGES += \
-    sound_trigger.primary.universal3470
 
 # needed by open-source audio-hal
 PRODUCT_PACKAGES += \

@@ -58,6 +58,9 @@ TARGET_KERNEL_CROSS_COMPILE_PREFIX := $(PWD)/prebuilts/gcc/linux-x86/arm/arm-lin
 TARGET_BOARD_PLATFORM := exynos3
 TARGET_SOC := exynos3470
 
+# Seccomp filters
+BOARD_SECCOMP_POLICY += device/samsung/smdk3470-common/configs/seccomp
+
 # Audio
 BOARD_USES_LIBMEDIA_WITH_AUDIOPARAMETER := true
 # Use stock HAL

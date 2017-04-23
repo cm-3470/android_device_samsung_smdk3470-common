@@ -57,8 +57,7 @@ PRODUCT_PACKAGES += \
 # Camera
 PRODUCT_PACKAGES += \
     camera.universal3470 \
-    camera.vendor.universal3470 \
-    Snap
+    camera.vendor.universal3470
 
 # Wifi
 PRODUCT_PACKAGES += \

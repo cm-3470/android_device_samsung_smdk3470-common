@@ -28,6 +28,9 @@ for i in $(find "$PATCHBASE"/* -type d); do
     if [ $PATCHNAME = "bootable_recovery" -a $TWRP = false ]; then suffix=".cm.patch"; fi
 
     if compgen -G "$PATCHBASE/$PATCHNAME/*${suffix}" > /dev/null; then
-        git am --ignore-whitespace -3 "$PATCHBASE/$PATCHNAME"/*${suffix} || exit 1
+        if ! git am --ignore-whitespace -3 "$PATCHBASE/$PATCHNAME"/*${suffix}; then
+            git am --abort
+            exit 1
+        fi
     fi
 done

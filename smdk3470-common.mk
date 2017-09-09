@@ -137,8 +137,8 @@ PRODUCT_PACKAGES += \
 # RIL
 PRODUCT_PACKAGES += \
     libsecril-client \
-	android.hardware.radio@1.0 \
-	android.hardware.radio.deprecated@1.0
+    android.hardware.radio@1.0 \
+    android.hardware.radio.deprecated@1.0
 
 # Deps for libsec-ril.so and audio.primary.universal3470.so
 PRODUCT_PACKAGES += \

@@ -1,4 +1,4 @@
-From 5436652fd78039820a72a49938d9af80dc4963f5 Mon Sep 17 00:00:00 2001
+From 60f3aa846ebabc556857ee5d34ae67ce41d94a92 Mon Sep 17 00:00:00 2001
 From: Tobias Gunkel <hennymcc@yahoo.de>
 Date: Wed, 25 Jan 2017 23:49:55 +0100
 Subject: [PATCH] ril: adjust to G800F MM ril (G800FXXU1CPK5)
@@ -9,18 +9,18 @@ Change-Id: Idb3411b072f27bb7f270ba380f2234280c305464
  1 file changed, 93 insertions(+)
 
 diff --git a/include/telephony/ril.h b/include/telephony/ril.h
-index 2e71367..90f253a 100644
+index 5b1e2d6..7d37337 100644
 --- a/include/telephony/ril.h
 +++ b/include/telephony/ril.h
-@@ -31,6 +31,7 @@
- extern "C" {
- #endif
+@@ -100,6 +100,7 @@ extern "C" {
+ #define MAX_QEMU_PIPE_NAME_LENGTH  11
+ #define MAX_UUID_LENGTH 64
  
 +#define SEC_PRODUCT_FEATURE_RIL_CALL_DUALMODE_CDMAGSM 1
  
- #if defined(ANDROID_SIM_COUNT_2)
- #define SIM_COUNT 2
-@@ -289,6 +290,12 @@ typedef struct {
+ typedef void * RIL_Token;
+ 
+@@ -411,6 +412,12 @@ typedef struct {
  } RIL_CDMA_SignalInfoRecord;
  
  typedef struct {
@@ -33,7 +33,7 @@ index 2e71367..90f253a 100644
      RIL_CallState   state;
      int             index;      /* Connection Index for use with, eg, AT+CHLD */
      int             toa;        /* type of address, eg 145 = intl */
-@@ -297,12 +304,17 @@ typedef struct {
+@@ -419,12 +426,17 @@ typedef struct {
      char            als;        /* ALS line indicator if available
                                     (0 = line 1) */
      char            isVoice;    /* nonzero if this is is a voice call */
@@ -51,7 +51,7 @@ index 2e71367..90f253a 100644
  } RIL_Call;
  
  /* Deprecated, use RIL_Data_Call_Response_v6 */
-@@ -449,6 +461,7 @@ typedef struct {
+@@ -574,6 +586,7 @@ typedef struct {
      int errorCode;    /* See 3GPP 27.005, 3.2.5 for GSM/UMTS,
                           3GPP2 N.S0005 (IS-41C) Table 171 for CDMA,
                           -1 if unknown or not applicable*/
@@ -59,7 +59,7 @@ index 2e71367..90f253a 100644
  } RIL_SMS_Response;
  
  /** Used by RIL_REQUEST_WRITE_SMS_TO_SIM */
-@@ -503,6 +516,7 @@ typedef struct {
+@@ -628,6 +641,7 @@ typedef struct {
      char *data;     /* May be NULL*/
      char *pin2;     /* May be NULL*/
      char *aidPtr;   /* AID value, See ETSI 102.221 8.1 and 101.220 4, NULL if no value. */
@@ -67,7 +67,7 @@ index 2e71367..90f253a 100644
  } RIL_SIM_IO_v6;
  
  /* Used by RIL_REQUEST_SIM_TRANSMIT_APDU_CHANNEL and
-@@ -770,6 +784,12 @@ typedef struct
+@@ -1089,6 +1103,12 @@ typedef struct
    int              pin1_replaced;   /* applicable to USIM, CSIM & ISIM */
    RIL_PinState     pin1;
    RIL_PinState     pin2;
@@ -80,7 +80,7 @@ index 2e71367..90f253a 100644
  } RIL_AppStatus;
  
  /* Deprecated, use RIL_CardStatus_v6 */
-@@ -4462,6 +4482,43 @@ typedef struct {
+@@ -5565,6 +5585,43 @@ typedef struct {
  
  /***********************************************************************/
  
@@ -124,7 +124,7 @@ index 2e71367..90f253a 100644
  
  #define RIL_UNSOL_RESPONSE_BASE 1000
  
-@@ -5061,6 +5118,42 @@ typedef struct {
+@@ -6203,6 +6260,42 @@ typedef struct {
  
  /***********************************************************************/
  

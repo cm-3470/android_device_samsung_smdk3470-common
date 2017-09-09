@@ -1,7 +1,7 @@
-From 81aa1b42f38a110aee60fdf2cefe7b9c76e545b2 Mon Sep 17 00:00:00 2001
+From 8fb4f9f84a45bcb1fe0291e7f252b1523a0d6c73 Mon Sep 17 00:00:00 2001
 From: Tobias Gunkel <hennymcc@yahoo.de>
 Date: Wed, 25 Jan 2017 23:50:13 +0100
-Subject: [PATCH 2/2] ril: recover on crash
+Subject: [PATCH] ril: recover on crash
 
 Change-Id: If24c65485e2b1bb23609cc3a4d1851338cf9d09c
 ---
@@ -9,10 +9,10 @@ Change-Id: If24c65485e2b1bb23609cc3a4d1851338cf9d09c
  1 file changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/rild/rild.c b/rild/rild.c
-index efc7c9d..3b9d9b1 100644
+index fb4955a..5ae4dfc 100644
 --- a/rild/rild.c
 +++ b/rild/rild.c
-@@ -68,6 +68,8 @@ extern void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
+@@ -70,6 +70,8 @@ extern void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
          size_t datalen);
  #endif
  
@@ -21,8 +21,8 @@ index efc7c9d..3b9d9b1 100644
  extern void RIL_requestTimedCallback (RIL_TimedCallback callback,
          void *param, const struct timeval *relativeTime);
  
-@@ -368,7 +370,10 @@ OpenLib:
- done:
+@@ -229,7 +231,10 @@ done:
+     rilc_thread_pool();
  
      RLOGD("RIL_Init starting sleep loop");
 -    while (true) {

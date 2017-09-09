@@ -18,16 +18,18 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/languages_full.mk)
 
 COMMON_PATH := device/samsung/smdk3470-common
 
+# HIDL
+PRODUCT_COPY_FILES += \
+    $(COMMON_PATH)/configs/manifest.xml:system/vendor/manifest.xml
+
 # Audio
 PRODUCT_PACKAGES += \
     audio.a2dp.default \
     audio.primary.universal3470 \
     audio.r_submix.default \
-    audio.usb.default
-
-# Sound
-PRODUCT_PACKAGES += \
-    sound_trigger.primary.universal3470
+    audio.usb.default \
+    android.hardware.audio@2.0-impl \
+    android.hardware.audio.effect@2.0-impl
 
 # needed by open-source audio-hal
 PRODUCT_PACKAGES += \
@@ -39,6 +41,10 @@ PRODUCT_PACKAGES += \
     libsamsungRecord_zoom \
     default_gain.conf \
     tinyucm.conf
+
+# Sound
+PRODUCT_PACKAGES += \
+    sound_trigger.primary.universal3470
 
 # HW composer
 PRODUCT_PACKAGES += \
@@ -57,12 +63,41 @@ PRODUCT_PACKAGES += \
 # Camera
 PRODUCT_PACKAGES += \
     camera.universal3470 \
-    camera.vendor.universal3470
+    camera.vendor.universal3470 \
+    camera.device@1.0-impl \
+    camera.device@3.2-impl \
+    android.hardware.camera.provider@2.4-impl
+
+# DRM
+PRODUCT_PACKAGES += \
+    android.hardware.drm@1.0-impl
+
+# Graphics
+PRODUCT_PACKAGES += \
+    android.hardware.graphics.allocator@2.0-impl \
+    android.hardware.graphics.allocator@2.0-service \
+    android.hardware.graphics.composer@2.1-impl \
+    android.hardware.graphics.mapper@2.0-impl
+
+# RenderScript HAL
+PRODUCT_PACKAGES += \
+    android.hardware.renderscript@1.0-impl
+
+# Memory
+PRODUCT_PACKAGES += \
+    android.hardware.memtrack@1.0-impl
 
 # Wifi
 PRODUCT_PACKAGES += \
+    android.hardware.wifi@1.0 \
+    android.hardware.wifi@1.0-impl \
+    android.hardware.wifi@1.0-service \
+    libwpa_client \
     hostapd \
-    wpa_supplicant
+    wificond \
+    wifilogd \
+    wpa_supplicant \
+    wifiloader
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/wifi/wpa_supplicant.conf:system/etc/wifi/wpa_supplicant.conf \
@@ -75,13 +110,13 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.camera.flash-autofocus.xml:system/etc/permissions/android.hardware.camera.flash-autofocus.xml \
     frameworks/native/data/etc/android.hardware.camera.front.xml:system/etc/permissions/android.hardware.camera.front.xml \
     frameworks/native/data/etc/android.hardware.location.gps.xml:system/etc/permissions/android.hardware.location.gps.xml \
-    frameworks/native/data/etc/android.hardware.sensor.accelerometer.xml:system/etc/permissions/android.hardware.sensor.accelerometer.xml \
-    frameworks/native/data/etc/android.hardware.sensor.compass.xml:system/etc/permissions/android.hardware.sensor.compass.xml \
-    frameworks/native/data/etc/android.hardware.sensor.proximity.xml:system/etc/permissions/android.hardware.sensor.proximity.xml \
+    frameworks/native/data/etc/android.hardware.telephony.cdma.xml:system/etc/permissions/android.hardware.telephony.cdma.xml \
     frameworks/native/data/etc/android.hardware.telephony.gsm.xml:system/etc/permissions/android.hardware.telephony.gsm.xml \
     frameworks/native/data/etc/android.hardware.touchscreen.multitouch.jazzhand.xml:system/etc/permissions/android.hardware.touchscreen.multitouch.jazzhand.xml \
     frameworks/native/data/etc/android.hardware.usb.accessory.xml:system/etc/permissions/android.hardware.usb.accessory.xml \
     frameworks/native/data/etc/android.hardware.usb.host.xml:system/etc/permissions/android.hardware.usb.host.xml \
+    frameworks/native/data/etc/android.hardware.audio.low_latency.xml:system/etc/permissions/android.hardware.audio.low_latency.xml \
+    frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml \
     frameworks/native/data/etc/android.hardware.wifi.direct.xml:system/etc/permissions/android.hardware.wifi.direct.xml \
     frameworks/native/data/etc/android.hardware.wifi.xml:system/etc/permissions/android.hardware.wifi.xml \
     frameworks/native/data/etc/handheld_core_hardware.xml:system/etc/permissions/handheld_core_hardware.xml
@@ -101,7 +136,9 @@ PRODUCT_PACKAGES += \
 
 # RIL
 PRODUCT_PACKAGES += \
-    libsecril-client
+    libsecril-client \
+	android.hardware.radio@1.0 \
+	android.hardware.radio.deprecated@1.0
 
 # Deps for libsec-ril.so and audio.primary.universal3470.so
 PRODUCT_PACKAGES += \
@@ -111,9 +148,19 @@ PRODUCT_PACKAGES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.telephony.ril_class=Exynos3470RIL
 
+# Bluetooth
+PRODUCT_PACKAGES += \
+    android.hardware.bluetooth@1.0-impl \
+    libbt-vendor
+
 # Set bluetooth soc to rome (TODO: check if "cherokee" or "rome")
 PRODUCT_PROPERTY_OVERRIDES += \
     qcom.bluetooth.soc=rome
+
+# Keymaster
+PRODUCT_PACKAGES += \
+    android.hardware.keymaster@3.0-impl \
+    android.hardware.keymaster@3.0-service
 
 # Storage
 PRODUCT_PROPERTY_OVERRIDES += \

@@ -1,4 +1,4 @@
-From 2da62fe8173c4b18b7e2db57863b38991c2d10d9 Mon Sep 17 00:00:00 2001
+From 8694c152f99d231f483778437345552c0fcf4c22 Mon Sep 17 00:00:00 2001
 From: Tobias Gunkel <hennymcc@yahoo.de>
 Date: Wed, 7 Sep 2016 21:40:30 +0200
 Subject: [PATCH] av: Add samsung wfd service
@@ -221,12 +221,12 @@ index 0000000..cc80549
 +}
 +#endif
 diff --git a/media/libmedia/Android.mk b/media/libmedia/Android.mk
-index df4e4b6..fccdb73 100644
+index e667786..4a9bcc0 100644
 --- a/media/libmedia/Android.mk
 +++ b/media/libmedia/Android.mk
-@@ -75,6 +75,13 @@ LOCAL_SRC_FILES:= \
-     StringArray.cpp \
-     AudioPolicy.cpp
+@@ -59,6 +59,13 @@ LOCAL_SRC_FILES += \
+     omx/1.0/WOmxNode.cpp \
+     omx/1.0/WOmxObserver.cpp \
  
 +ifeq ($(BOARD_USES_WFD_SERVICE),true)
 +LOCAL_SRC_FILES += \
@@ -236,7 +236,7 @@ index df4e4b6..fccdb73 100644
 +endif
 +
  LOCAL_SHARED_LIBRARIES := \
- 	libui liblog libcutils libutils libbinder libsonivox libicuuc libicui18n libexpat \
+         libui liblog libcutils libutils libbinder libsonivox libicuuc libicui18n libexpat \
          libcamera_client libstagefright_foundation \
 diff --git a/media/libmedia/IWFDService.cpp b/media/libmedia/IWFDService.cpp
 new file mode 100644

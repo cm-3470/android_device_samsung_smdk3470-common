@@ -1,31 +1,19 @@
-From dfa3542bf33c291e04b4d00805d0e8ff8d48c701 Mon Sep 17 00:00:00 2001
+From 2d1db0f2af3ec7f657c7dfc2846138aef7ed68a4 Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Mon, 26 Oct 2015 01:03:48 +0100
-Subject: [PATCH 1/2] Revert "Remove Parcel::writeIntPtr."
+Subject: [PATCH] Revert "Remove Parcel::writeIntPtr."
 
 Change-Id: If64f2591e1fb04a643a4b17e4377e232375beb16
 ---
- include/binder/Parcel.h | 1 +
- libs/binder/Parcel.cpp  | 5 +++++
+ libs/binder/Parcel.cpp              | 5 +++++
+ libs/binder/include/binder/Parcel.h | 1 +
  2 files changed, 6 insertions(+)
 
-diff --git a/include/binder/Parcel.h b/include/binder/Parcel.h
-index bd23069..13b06b6 100644
---- a/include/binder/Parcel.h
-+++ b/include/binder/Parcel.h
-@@ -107,6 +107,7 @@ public:
-     status_t            writeUint64(uint64_t val);
-     status_t            writeFloat(float val);
-     status_t            writeDouble(double val);
-+    status_t            writeIntPtr(intptr_t val);
-     status_t            writeCString(const char* str);
-     status_t            writeString8(const String8& str);
-     status_t            writeString16(const String16& str);
 diff --git a/libs/binder/Parcel.cpp b/libs/binder/Parcel.cpp
-index 52e24f4..38f3608 100644
+index aec8f10..bd88ba5 100644
 --- a/libs/binder/Parcel.cpp
 +++ b/libs/binder/Parcel.cpp
-@@ -1051,6 +1051,11 @@ status_t Parcel::writeDouble(double val)
+@@ -1029,6 +1029,11 @@ status_t Parcel::writeDouble(double val)
  
  #endif
  
@@ -37,6 +25,18 @@ index 52e24f4..38f3608 100644
  status_t Parcel::writeCString(const char* str)
  {
      return write(str, strlen(str)+1);
+diff --git a/libs/binder/include/binder/Parcel.h b/libs/binder/include/binder/Parcel.h
+index 5d36526..3ec11ef 100644
+--- a/libs/binder/include/binder/Parcel.h
++++ b/libs/binder/include/binder/Parcel.h
+@@ -114,6 +114,7 @@ public:
+     status_t            writeUint64(uint64_t val);
+     status_t            writeFloat(float val);
+     status_t            writeDouble(double val);
++    status_t            writeIntPtr(intptr_t val);
+     status_t            writeCString(const char* str);
+     status_t            writeString8(const String8& str);
+     status_t            writeString16(const String16& str);
 -- 
 2.7.4
 

@@ -100,6 +100,7 @@ extern "C" {
 #define MAX_QEMU_PIPE_NAME_LENGTH  11
 #define MAX_UUID_LENGTH 64
 
+#define SEC_PRODUCT_FEATURE_RIL_CALL_DUALMODE_CDMAGSM 1
 
 typedef void * RIL_Token;
 
@@ -411,6 +412,12 @@ typedef struct {
 } RIL_CDMA_SignalInfoRecord;
 
 typedef struct {
+    char            call_type;  /* Samsung */
+    char            call_domain;/* Samsung */
+    char *          csv;        /* Samsung */
+} RIL_Call_extra;
+
+typedef struct {
     RIL_CallState   state;
     int             index;      /* Connection Index for use with, eg, AT+CHLD */
     int             toa;        /* type of address, eg 145 = intl */
@@ -419,12 +426,17 @@ typedef struct {
     char            als;        /* ALS line indicator if available
                                    (0 = line 1) */
     char            isVoice;    /* nonzero if this is is a voice call */
+    char            isVideo;    /* Samsung */
     char            isVoicePrivacy;     /* nonzero if CDMA voice privacy mode is active */
+    char            unknown1;
+    char            unknown2;
     char *          number;     /* Remote party number */
     int             numberPresentation; /* 0=Allowed, 1=Restricted, 2=Not Specified/Unknown 3=Payphone */
     char *          name;       /* Remote party name */
     int             namePresentation; /* 0=Allowed, 1=Restricted, 2=Not Specified/Unknown 3=Payphone */
+    int             unknown3;
     RIL_UUS_Info *  uusInfo;    /* NULL or Pointer to User-User Signaling Information */
+    RIL_Call_extra * extra;
 } RIL_Call;
 
 /* Deprecated, use RIL_Data_Call_Response_v6 */
@@ -574,6 +586,7 @@ typedef struct {
     int errorCode;    /* See 3GPP 27.005, 3.2.5 for GSM/UMTS,
                          3GPP2 N.S0005 (IS-41C) Table 171 for CDMA,
                          -1 if unknown or not applicable*/
+    int unknown;      /* unknown parameter */
 } RIL_SMS_Response;
 
 /** Used by RIL_REQUEST_WRITE_SMS_TO_SIM */
@@ -597,7 +610,10 @@ typedef struct {
              * clir == 0 on "use subscription default value"
              * clir == 1 on "CLIR invocation" (restrict CLI presentation)
              * clir == 2 on "CLIR suppression" (allow CLI presentation)
-             */
+             */    
+    //int callType;    /* Samsung CallDetails */
+    //int callDomain;  /* Samsung CallDetails */
+    //char * csv;      /* Samsung CallDetails */
     RIL_UUS_Info *  uusInfo;    /* NULL or Pointer to User-User Signaling Information */
 } RIL_Dial;
 
@@ -628,6 +644,7 @@ typedef struct {
     char *data;     /* May be NULL*/
     char *pin2;     /* May be NULL*/
     char *aidPtr;   /* AID value, See ETSI 102.221 8.1 and 101.220 4, NULL if no value. */
+    int cla;	    /* Class of the APDU command */
 } RIL_SIM_IO_v6;
 
 /* Used by RIL_REQUEST_SIM_TRANSMIT_APDU_CHANNEL and
@@ -1089,6 +1106,12 @@ typedef struct
   int              pin1_replaced;   /* applicable to USIM, CSIM & ISIM */
   RIL_PinState     pin1;
   RIL_PinState     pin2;
+  /* Samsung enhancements */
+  int              pin1_num_retries;
+  int              puk1_num_retries;
+  int              pin2_num_retries;
+  int              puk2_num_retries;
+  int              perso_unblock_retries;
 } RIL_AppStatus;
 
 /* Deprecated, use RIL_CardStatus_v6 */
@@ -5565,6 +5588,43 @@ typedef struct {
 
 /***********************************************************************/
 
+/* SAMSUNG REQUESTS */
+
+#define RIL_REQUEST_DIAL_EMERGENCY_CALL 10001
+#define RIL_REQUEST_CALL_DEFLECTION 10002
+#define RIL_REQUEST_MODIFY_CALL_INITIATE 10003
+#define RIL_REQUEST_MODIFY_CALL_CONFIRM 10004
+#define RIL_REQUEST_SET_VOICE_DOMAIN_PREF 10005
+#define RIL_REQUEST_SAFE_MODE 10006
+#define RIL_REQUEST_SET_TRANSMIT_POWER 10007
+#define RIL_REQUEST_GET_CELL_BROADCAST_CONFIG 10008
+#define RIL_REQUEST_GET_PHONEBOOK_STORAGE_INFO 10009
+#define RIL_REQUEST_GET_PHONEBOOK_ENTRY 10010
+#define RIL_REQUEST_ACCESS_PHONEBOOK_ENTRY 10011
+#define RIL_REQUEST_USIM_PB_CAPA 10012
+#define RIL_REQUEST_LOCK_INFO 10013
+#define RIL_REQUEST_STK_SIM_INIT_EVENT 10014
+#define RIL_REQUEST_SET_PREFERRED_NETWORK_LIST 10015
+#define RIL_REQUEST_GET_PREFERRED_NETWORK_LIST 10016
+#define RIL_REQUEST_CHANGE_SIM_PERSO 10017
+#define RIL_REQUEST_ENTER_SIM_PERSO 10018
+#define RIL_REQUEST_SEND_ENCODED_USSD 10019
+#define RIL_REQUEST_CDMA_SEND_SMS_EXPECT_MORE 10020
+#define RIL_REQUEST_REQUEST_HOLD 10022
+#define RIL_REQUEST_SET_SIM_POWER 10023
+#define RIL_REQUEST_GET_ACB_INFO 10024
+#define RIL_REQUEST_UICC_GBA_AUTHENTICATE_BOOTSTRAP 10025
+#define RIL_REQUEST_UICC_GBA_AUTHENTICATE_NAF 10026
+#define RIL_REQUEST_GET_INCOMING_COMMUNICATION_BARRING 10027
+#define RIL_REQUEST_SET_INCOMING_COMMUNICATION_BARRING 10028
+#define RIL_REQUEST_QUERY_CNAP 10029
+#define RIL_REQUEST_SET_TRANSFER_CALL 10030
+#define RIL_REQUEST_GET_DISABLE_2G 10031
+#define RIL_REQUEST_SET_DISABLE_2G 10032
+#define RIL_REQUEST_REFRESH_NITZ_TIME 10033
+#define RIL_REQUEST_ENABLE_UNSOL_RESPONSE 10034  
+
+/***********************************************************************/
 
 #define RIL_UNSOL_RESPONSE_BASE 1000
 
@@ -6203,6 +6263,42 @@ typedef struct {
 
 /***********************************************************************/
 
+#define SAMSUNG_UNSOL_RESPONSE_BASE 11000
+
+#define RIL_UNSOL_RESPONSE_NEW_CB_MSG 11000
+#define RIL_UNSOL_RELEASE_COMPLETE_MESSAGE 11001
+#define RIL_UNSOL_STK_SEND_SMS_RESULT 11002
+#define RIL_UNSOL_STK_CALL_CONTROL_RESULT 11003
+#define RIL_UNSOL_ACB_INFO_CHANGED 11005
+#define RIL_UNSOL_DEVICE_READY_NOTI 11008
+#define RIL_UNSOL_GPS_NOTI 11009
+#define RIL_UNSOL_AM 11010
+#define RIL_UNSOL_SAP 11013
+#define RIL_UNSOL_UART 11020
+#define RIL_UNSOL_SIM_PB_READY 11021
+#define RIL_UNSOL_VE 11024
+#define RIL_UNSOL_FACTORY_AM 11026
+#define RIL_UNSOL_MODIFY_CALL 11028
+#define RIL_UNSOL_CS_FALLBACK 11030
+#define RIL_UNSOL_VOICE_SYSTEM_ID 11032
+#define RIL_UNSOL_IMS_RETRYOVER 11034
+#define RIL_UNSOL_PB_INIT_COMPLETE 11035
+#define RIL_UNSOL_HYSTERESIS_DCN 11037
+#define RIL_UNSOL_CP_POSITION 11038
+#define RIL_UNSOL_HOME_NETWORK_NOTI 11043
+#define RIL_UNSOL_STK_CALL_STATUS 11054
+#define RIL_UNSOL_MODEM_CAP 11056
+#define RIL_UNSOL_SIM_SWAP_STATE_CHANGED 11057
+#define RIL_UNSOL_SIM_COUNT_MISMATCHED 11058
+#define RIL_UNSOL_DUN 11060
+#define RIL_UNSOL_IMS_PREFERENCE_CHANGED 11061
+#define RIL_UNSOL_SIM_APPLICATION_REFRESH 11062
+#define RIL_UNSOL_UICC_APPLICATION_STATUS 11063
+#define RIL_UNSOL_VOICE_RADIO_BEARER_HO_STATUS 11064
+#define RIL_UNSOL_CLM_NOTI 11065
+#define RIL_UNSOL_SIM_ICCID_NOTI 11066
+
+/*************************************************************************/
 
 #if defined(ANDROID_MULTI_SIM)
 /**

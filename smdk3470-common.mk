@@ -145,9 +145,6 @@ PRODUCT_PACKAGES += \
     libxml2 \
     libprotobuf-cpp-full
 
-PRODUCT_PROPERTY_OVERRIDES += \
-    ro.telephony.ril_class=Exynos3470RIL
-
 # Bluetooth
 PRODUCT_PACKAGES += \
     android.hardware.bluetooth@1.0-impl \

@@ -20,7 +20,9 @@
 # definition file).
 #
 
-BOARD_VENDOR := samsung
+# Do not set vendor to not automatically include hardware/samsung
+#BOARD_VENDOR := samsung
+BOARD_VENDOR := 
 
 # Architecture
 TARGET_ARCH := arm
@@ -103,6 +105,9 @@ BOARD_RIL_CLASS := ../../../device/samsung/smdk3470-common/ril
 
 # Sensors (libgui crashes otherwise if SENSOR_PERMISSION_BODY_SENSORS is defined by a sensor)
 TARGET_NO_SENSOR_PERMISSION_CHECK := true
+
+# Charger
+WITH_LINEAGE_CHARGER := false
 
 # WFD
 BOARD_USES_WFD_SERVICE := true

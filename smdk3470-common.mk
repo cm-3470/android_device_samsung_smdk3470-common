@@ -130,9 +130,9 @@ PRODUCT_PACKAGES += \
     ebtables \
     ethertypes
     
-# libstlport
-PRODUCT_PACKAGES += \
-    libstlport 
+# libstlport (only copies a prebuilt lib since oreo)
+#PRODUCT_PACKAGES += \
+#    libstlport 
 
 # RIL
 PRODUCT_PACKAGES += \

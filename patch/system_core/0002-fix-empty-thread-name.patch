@@ -1,0 +1,69 @@
+From b7045fca9f68bf713d0ac73e12e7c8a2161907fe Mon Sep 17 00:00:00 2001
+From: "Christopher N. Hesse" <raymanfx@gmail.com>
+Date: Sun, 4 Sep 2016 12:26:32 +0200
+Subject: [PATCH] utils: Threads: Handle empty thread names
+
+* Fixes camera for Samsung Exynos devices:
+
+08-30 18:07:03.585  2729  2729 I ExynosCameraFrameFactory: INFO(startThread[1608]):pipeId=0
+08-30 18:07:03.585  2729  2729 F libutils.threads: thread name not provided to Thread::run
+08-30 18:07:03.586  2729  2729 F libc    : Fatal signal 6 (SIGABRT), code -6 in tid 2729 (cameraserver)
+08-30 18:07:03.587  2548  2548 W         : debuggerd: handling request: pid=2729 uid=1047 gid=1005 tid=2729
+08-30 18:07:03.656  6489  6489 F DEBUG   : *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+08-30 18:07:03.656  6489  6489 F DEBUG   : Build fingerprint: 'samsung/aosp_gts210ltexx/gts210ltexx:7.0/NYC/chris08292135:userdebug/test-keys'
+08-30 18:07:03.656  6489  6489 F DEBUG   : Revision: '0'
+08-30 18:07:03.657  6489  6489 F DEBUG   : ABI: 'arm'
+08-30 18:07:03.657  6489  6489 F DEBUG   : pid: 2729, tid: 2729, name: cameraserver  >>> /system/bin/cameraserver <<<
+08-30 18:07:03.658  6489  6489 F DEBUG   : signal 6 (SIGABRT), code -6 (SI_TKILL), fault addr --------
+08-30 18:07:03.673  6489  6489 F DEBUG   : Abort message: 'thread name not provided to Thread::run'
+08-30 18:07:03.673  6489  6489 F DEBUG   :     r0 00000000  r1 00000aa9  r2 00000006  r3 00000008
+08-30 18:07:03.674  6489  6489 F DEBUG   :     r4 b5a2c58c  r5 00000006  r6 b5a2c534  r7 0000010c
+08-30 18:07:03.674  6489  6489 F DEBUG   :     r8 b28b5380  r9 00000000  sl 00000000  fp b2a92800
+08-30 18:07:03.674  6489  6489 F DEBUG   :     ip 00000016  sp be90b350  lr b4f7e537  pc b4f80d94  cpsr 200f0010
+08-30 18:07:03.694  6489  6489 F DEBUG   :
+08-30 18:07:03.694  6489  6489 F DEBUG   : backtrace:
+08-30 18:07:03.694  6489  6489 F DEBUG   :     #00 pc 00049d94  /system/lib/libc.so (tgkill+12)
+08-30 18:07:03.694  6489  6489 F DEBUG   :     #01 pc 00047533  /system/lib/libc.so (pthread_kill+34)
+08-30 18:07:03.694  6489  6489 F DEBUG   :     #02 pc 0001d885  /system/lib/libc.so (raise+10)
+08-30 18:07:03.694  6489  6489 F DEBUG   :     #03 pc 000193d1  /system/lib/libc.so (__libc_android_abort+34)
+08-30 18:07:03.694  6489  6489 F DEBUG   :     #04 pc 00017014  /system/lib/libc.so (abort+4)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #05 pc 0000bfd5  /system/lib/libcutils.so (__android_log_assert+112)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #06 pc 0000e265  /system/lib/libutils.so (_ZN7android6Thread3runEPKcij+212)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #07 pc 00045903  /system/lib/libexynoscamera.so (_ZN7android16ExynosCameraPipe11startThreadEv+74)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #08 pc 0007b1c3  /system/lib/libexynoscamera.so (_ZN7android24ExynosCameraFrameFactory11startThreadEj+70)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #09 pc 0007bcef  /system/lib/libexynoscamera.so (_ZN7android24ExynosCameraFrameFactory19startInitialThreadsEv+70)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #10 pc 0006231d  /system/lib/libexynoscamera.so (_ZN7android12ExynosCamera22m_startPreviewInternalEv+1140)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #11 pc 0006b897  /system/lib/libexynoscamera.so (_ZN7android12ExynosCamera12startPreviewEv+1666)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #12 pc 000037b1  /system/lib/hw/camera.universal5433.so
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #13 pc 0006094f  /system/lib/libcameraservice.so (_ZN7android12CameraClient16startPreviewModeEv+102)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #14 pc 00060825  /system/lib/libcameraservice.so (_ZN7android12CameraClient15startCameraModeENS0_11camera_modeE+68)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #15 pc 000282f9  /system/lib/libcamera_client.so (_ZN7android8hardware8BnCamera10onTransactEjRKNS_6ParcelEPS2_j+724)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #16 pc 000359b3  /system/lib/libbinder.so (_ZN7android7BBinder8transactEjRKNS_6ParcelEPS1_j+70)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #17 pc 0003d159  /system/lib/libbinder.so (_ZN7android14IPCThreadState14executeCommandEi+684)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #18 pc 0003cdb7  /system/lib/libbinder.so (_ZN7android14IPCThreadState20getAndExecuteCommandEv+114)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #19 pc 0003d2bb  /system/lib/libbinder.so (_ZN7android14IPCThreadState14joinThreadPoolEb+46)
+08-30 18:07:03.695  6489  6489 F DEBUG   :     #20 pc 00000b4d  /system/bin/cameraserver
+08-30 18:07:03.696  6489  6489 F DEBUG   :     #21 pc 00016c2d  /system/lib/libc.so (__libc_init+48)
+08-30 18:07:03.696  6489  6489 F DEBUG   :     #22 pc 00000a18  /system/bin/cameraserver
+
+Change-Id: Ib6234260a5fc5798eea580e0ac594313650de933
+---
+ libutils/Threads.cpp | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/libutils/Threads.cpp b/libutils/Threads.cpp
+index def739f9f..7a56fc5c4 100644
+--- a/libutils/Threads.cpp
++++ b/libutils/Threads.cpp
+@@ -668,7 +668,10 @@ status_t Thread::readyToRun()
+ 
+ status_t Thread::run(const char* name, int32_t priority, size_t stack)
+ {
+-    LOG_ALWAYS_FATAL_IF(name == nullptr, "thread name not provided to Thread::run");
++    if (name == nullptr) {
++        ALOGW("Thread name not provided to Thread::run");
++        name = 0;
++    }
+ 
+     Mutex::Autolock _l(mLock);
+ 

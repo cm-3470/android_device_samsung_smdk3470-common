@@ -27,6 +27,21 @@ for device in kminilte degaslte; do
     postfix="\x{00}\x{00}\x{FF}\x{FF}\x{FF}\x{FF}$mwlan_helper_addr"
     replace_all "\x{E8}\x{03}$postfix" "\x{11}\x{04}$postfix" ${VENDOR_DIR}/lib/libsec-ril.so 
 
+    # Link libsec-ril.so to Google Protobuffer 2.6.
+    #
+    # Oreo uses Google Protobuf 3.0 which is incompatible with libsec-ril.
+    # As gpsd links libsec-ril.so and libhwui.so (which needs Protobuf 3.0) we have
+    # to link Protobuf 2.6 as well as 3.0.
+    # 
+    # The compatibility lib for 2.6 (libprotobuf-cpp-fl26.so) is provided by the
+    # cm-3470/android_external_protobuf-compat-2.6 repo.
+    # To avoid namespace clashes the namespace was renamed from "google::" to "gxxgle::".
+    # We also have to rename the namespaces in libsec-ril.so to be able to link against libprotobuf-cpp-fl26.so.
+    replace_all 'libprotobuf-cpp-full.so' 'libprotobuf-cpp-fl26.so' ${VENDOR_DIR}/lib/libsec-ril.so
+    replace_all '_ZN6google8protobuf' '_ZN6gxxgle8protobuf' ${VENDOR_DIR}/lib/libsec-ril.so
+    replace_all '_ZNK6google8protobuf' '_ZNK6gxxgle8protobuf' ${VENDOR_DIR}/lib/libsec-ril.so
+    replace_all '_ZTVN6google8protobuf' '_ZTVN6gxxgle8protobuf' ${VENDOR_DIR}/lib/libsec-ril.so
+
     # LP camera hal has a reference to libion.so, although it is not using it.
     # libexynoscamera.so wants to use ion_alloc()/... of libion_exynos.so but as 
     # libion.so (with the functions of the same name) is already referenced,

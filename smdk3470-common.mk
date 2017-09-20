@@ -141,9 +141,11 @@ PRODUCT_PACKAGES += \
     android.hardware.radio.deprecated@1.0
 
 # Deps for libsec-ril.so and audio.primary.universal3470.so
+# We need libprotobuf-cpp-full 3.0 (libhwui.so) and 2.6 (libsec-ril.so)
 PRODUCT_PACKAGES += \
     libxml2 \
-    libprotobuf-cpp-full
+    libprotobuf-cpp-full \
+    libprotobuf-cpp-fl26
 
 # Bluetooth
 PRODUCT_PACKAGES += \

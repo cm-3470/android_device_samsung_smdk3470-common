@@ -1,0 +1,105 @@
+From 9b1468dab77b32af880aaf973659f229e99811bd Mon Sep 17 00:00:00 2001
+From: Tobias Gunkel <hennymcc@yahoo.de>
+Date: Wed, 20 Sep 2017 17:28:56 +0200
+Subject: [PATCH] audioclient: backward compatibility with stock audio lib
+
+Change-Id: I28959f4285d217c727afd7dc41cbed9a1af7dc7e
+---
+ .../libaudioclient/include/media/AudioParameter.h  |  4 +++
+ media/libmedia/AudioParameter.cpp                  | 42 ++++++++++++++++++++++
+ 2 files changed, 46 insertions(+)
+
+diff --git a/media/libaudioclient/include/media/AudioParameter.h b/media/libaudioclient/include/media/AudioParameter.h
+index 1ace607..bb646e5 100644
+--- a/media/libaudioclient/include/media/AudioParameter.h
++++ b/media/libaudioclient/include/media/AudioParameter.h
+@@ -76,6 +76,7 @@ public:
+     static const char * const valueListSeparator;
+ 
+     String8 toString() const { return toStringImpl(true); }
++    String8 toString() { return toStringImpl(true); }
+     String8 keysToString() const { return toStringImpl(false); }
+ 
+     status_t add(const String8& key, const String8& value);
+@@ -86,8 +87,11 @@ public:
+     status_t remove(const String8& key);
+ 
+     status_t get(const String8& key, String8& value) const;
++    status_t get(const String8& key, String8& value);
+     status_t getInt(const String8& key, int& value) const;
++    status_t getInt(const String8& key, int& value);
+     status_t getFloat(const String8& key, float& value) const;
++    status_t getFloat(const String8& key, float& value);
+     status_t getAt(size_t index, String8& key) const;
+     status_t getAt(size_t index, String8& key, String8& value) const;
+ 
+diff --git a/media/libmedia/AudioParameter.cpp b/media/libmedia/AudioParameter.cpp
+index 65fc70b..9c547b7 100644
+--- a/media/libmedia/AudioParameter.cpp
++++ b/media/libmedia/AudioParameter.cpp
+@@ -157,6 +157,16 @@ status_t AudioParameter::get(const String8& key, String8& value) const
+     }
+ }
+ 
++status_t AudioParameter::get(const String8& key, String8& value)
++{
++    if (mParameters.indexOfKey(key) >= 0) {
++        value = mParameters.valueFor(key);
++        return NO_ERROR;
++    } else {
++        return BAD_VALUE;
++    }
++}
++
+ status_t AudioParameter::getInt(const String8& key, int& value) const
+ {
+     String8 str8;
+@@ -173,6 +183,22 @@ status_t AudioParameter::getInt(const String8& key, int& value) const
+     return result;
+ }
+ 
++status_t AudioParameter::getInt(const String8& key, int& value)
++{
++    String8 str8;
++    status_t result = get(key, str8);
++    value = 0;
++    if (result == NO_ERROR) {
++        int val;
++        if (sscanf(str8.string(), "%d", &val) == 1) {
++            value = val;
++        } else {
++            result = INVALID_OPERATION;
++        }
++    }
++    return result;
++}
++
+ status_t AudioParameter::getFloat(const String8& key, float& value) const
+ {
+     String8 str8;
+@@ -189,6 +215,22 @@ status_t AudioParameter::getFloat(const String8& key, float& value) const
+     return result;
+ }
+ 
++status_t AudioParameter::getFloat(const String8& key, float& value)
++{
++    String8 str8;
++    status_t result = get(key, str8);
++    value = 0;
++    if (result == NO_ERROR) {
++        float val;
++        if (sscanf(str8.string(), "%f", &val) == 1) {
++            value = val;
++        } else {
++            result = INVALID_OPERATION;
++        }
++    }
++    return result;
++}
++
+ status_t AudioParameter::getAt(size_t index, String8& key) const
+ {
+     if (mParameters.size() > index) {
+-- 
+2.7.4
+

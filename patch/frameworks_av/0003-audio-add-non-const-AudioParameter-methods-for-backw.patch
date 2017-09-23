@@ -1,23 +1,24 @@
-From 9b1468dab77b32af880aaf973659f229e99811bd Mon Sep 17 00:00:00 2001
+From 8c3e410090949ba067deb4ecc844cbccb25e7e55 Mon Sep 17 00:00:00 2001
 From: Tobias Gunkel <hennymcc@yahoo.de>
 Date: Wed, 20 Sep 2017 17:28:56 +0200
-Subject: [PATCH] audioclient: backward compatibility with stock audio lib
+Subject: [PATCH] audio: add non-const AudioParameter methods for backward
+ compatibility
 
 Change-Id: I28959f4285d217c727afd7dc41cbed9a1af7dc7e
 ---
- .../libaudioclient/include/media/AudioParameter.h  |  4 +++
- media/libmedia/AudioParameter.cpp                  | 42 ++++++++++++++++++++++
- 2 files changed, 46 insertions(+)
+ .../libaudioclient/include/media/AudioParameter.h  |  4 ++
+ media/libmedia/AudioParameter.cpp                  | 47 ++++++++++++++++++++++
+ 2 files changed, 51 insertions(+)
 
 diff --git a/media/libaudioclient/include/media/AudioParameter.h b/media/libaudioclient/include/media/AudioParameter.h
-index 1ace607..bb646e5 100644
+index 1ace607..ee1804c 100644
 --- a/media/libaudioclient/include/media/AudioParameter.h
 +++ b/media/libaudioclient/include/media/AudioParameter.h
 @@ -76,6 +76,7 @@ public:
      static const char * const valueListSeparator;
  
      String8 toString() const { return toStringImpl(true); }
-+    String8 toString() { return toStringImpl(true); }
++    String8 toString();
      String8 keysToString() const { return toStringImpl(false); }
  
      status_t add(const String8& key, const String8& value);
@@ -34,10 +35,22 @@ index 1ace607..bb646e5 100644
      status_t getAt(size_t index, String8& key, String8& value) const;
  
 diff --git a/media/libmedia/AudioParameter.cpp b/media/libmedia/AudioParameter.cpp
-index 65fc70b..9c547b7 100644
+index 65fc70b..249b6e4 100644
 --- a/media/libmedia/AudioParameter.cpp
 +++ b/media/libmedia/AudioParameter.cpp
-@@ -157,6 +157,16 @@ status_t AudioParameter::get(const String8& key, String8& value) const
+@@ -99,6 +99,11 @@ String8 AudioParameter::toStringImpl(bool useValues) const
+     return str;
+ }
+ 
++String8 AudioParameter::toString()
++{
++    return toStringImpl(true);
++}
++
+ status_t AudioParameter::add(const String8& key, const String8& value)
+ {
+     if (mParameters.indexOfKey(key) < 0) {
+@@ -157,6 +162,16 @@ status_t AudioParameter::get(const String8& key, String8& value) const
      }
  }
  
@@ -54,7 +67,7 @@ index 65fc70b..9c547b7 100644
  status_t AudioParameter::getInt(const String8& key, int& value) const
  {
      String8 str8;
-@@ -173,6 +183,22 @@ status_t AudioParameter::getInt(const String8& key, int& value) const
+@@ -173,6 +188,22 @@ status_t AudioParameter::getInt(const String8& key, int& value) const
      return result;
  }
  
@@ -77,7 +90,7 @@ index 65fc70b..9c547b7 100644
  status_t AudioParameter::getFloat(const String8& key, float& value) const
  {
      String8 str8;
-@@ -189,6 +215,22 @@ status_t AudioParameter::getFloat(const String8& key, float& value) const
+@@ -189,6 +220,22 @@ status_t AudioParameter::getFloat(const String8& key, float& value) const
      return result;
  }
  

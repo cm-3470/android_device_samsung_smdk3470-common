@@ -100,9 +100,6 @@ BOARD_USE_DMA_BUF := true
 # Advanced Low Power audio support
 BOARD_USE_ALP_AUDIO := true
 
-# Radio
-BOARD_RIL_CLASS := ../../../device/samsung/smdk3470-common/ril
-
 # Sensors (libgui crashes otherwise if SENSOR_PERMISSION_BODY_SENSORS is defined by a sensor)
 TARGET_NO_SENSOR_PERMISSION_CHECK := true
 

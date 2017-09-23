@@ -97,9 +97,6 @@ BOARD_USE_STOREMETADATA := true
 BOARD_USE_METADATABUFFERTYPE := true
 BOARD_USE_DMA_BUF := true
 
-# Advanced Low Power audio support
-BOARD_USE_ALP_AUDIO := true
-
 # Sensors (libgui crashes otherwise if SENSOR_PERMISSION_BODY_SENSORS is defined by a sensor)
 TARGET_NO_SENSOR_PERMISSION_CHECK := true
 

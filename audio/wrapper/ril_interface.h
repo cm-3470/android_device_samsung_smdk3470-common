@@ -28,9 +28,7 @@
 #define RIL_CLIENT_ERR_RESOURCE     6 // Resource not available
 #define RIL_CLIENT_ERR_UNKNOWN      7
 
-#define RIL_OEM_UNSOL_RESPONSE_BASE 11000 // RIL response base index
-#define RIL_UNSOL_WB_AMR_STATE \
-    (RIL_OEM_UNSOL_RESPONSE_BASE + 17)    // RIL AMR state index
+#define RIL_UNSOL_AM 11010    // RIL Activity manager command (contains a command-line for the "am" command)
 
 struct ril_handle
 {
@@ -94,6 +92,7 @@ enum ril_two_mic_state {
 /* Function prototypes */
 int ril_open(struct ril_handle *ril);
 int ril_close(struct ril_handle *ril);
+int ril_connect_if_required(struct ril_handle *ril);
 int ril_set_call_volume(struct ril_handle *ril, enum ril_sound_type sound_type,
                         float volume);
 int ril_set_call_audio_path(struct ril_handle *ril,

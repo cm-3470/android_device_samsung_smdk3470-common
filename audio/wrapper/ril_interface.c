@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#define ALOG_TAG "audio_hw_primary"
-/*#define ALOG_NDEBUG 0*/
+#define LOG_TAG "audio_hw_primary"
+/*#define LOG_NDEBUG 0*/
 
 #include <dlfcn.h>
 #include <stdlib.h>
@@ -41,7 +41,6 @@ int (*_ril_set_call_clock_sync)(void *, enum ril_clock_state);
 int (*_ril_set_mute)(void *, int);
 int (*_ril_set_two_mic_control)(void *, enum ril_two_mic_device, enum ril_two_mic_state);
 int (*_ril_register_unsolicited_handler)(void *, int, void *);
-int (*_ril_get_wb_amr)(void *, void *);
 
 /* Audio WB AMR callback */
 void (*_audio_set_wb_amr_callback)(void *, int);
@@ -53,23 +52,49 @@ void ril_register_set_wb_amr_callback(void *function, void *data)
     callback_data = data;
 }
 
-/* This is the callback function that the RIL uses to
-set the wideband AMR state */
-static int ril_set_wb_amr_callback(void *ril_client,
+static int UTF16ToANSI(const char *str_in, char *str_out, int max_chars)
+{
+    int i;
+    for (i = 0; str_in[i*2] != 0; ++i) {
+        if (i >= max_chars)
+            return -1;
+        str_out[i] = str_in[i*2];
+    }
+    str_out[i] = 0;
+    return i;
+}
+
+static int ril_am_callback(void *ril_client,
                                    const void *data,
                                    size_t datalen)
 {
-    int enable = ((int *)data)[0];
+    const char* am_cmd_utf16_str = (char*) data;
+    const int MAX_CMD_LEN = 256;
+    char am_cmd_str[MAX_CMD_LEN + 1];
+    int flag;
+    int wb_amr_enabled;
 
     if (!callback_data || !_audio_set_wb_amr_callback)
         return -1;
 
-    _audio_set_wb_amr_callback(callback_data, enable);
+    if (UTF16ToANSI(am_cmd_utf16_str, am_cmd_str, MAX_CMD_LEN) < 0) {
+        ALOGE("ril_am_callback() failed: command to long: %d chars", datalen/2 - 1);
+        return -1;
+    }
 
-    return 0;
+    // check for WB-AMR status command
+    if (sscanf(am_cmd_str, "broadcast -a com.samsung.intent.action.WB_AMR -f %d --ei EXTRA_STATE %d",
+        &flag, &wb_amr_enabled) == 2)
+    {
+        _audio_set_wb_amr_callback(callback_data, wb_amr_enabled);
+        return 0;
+    }
+
+    ALOGW("ril_am_callback() unknown command: %s, %d", am_cmd_str, datalen);
+    return -1;
 }
 
-static int ril_connect_if_required(struct ril_handle *ril)
+int ril_connect_if_required(struct ril_handle *ril)
 {
     if (_ril_is_connected(ril->client))
         return 0;
@@ -78,11 +103,6 @@ static int ril_connect_if_required(struct ril_handle *ril)
         ALOGE("ril_connect() failed: %s", strerror(errno));
         return -1;
     }
-
-    /* get wb amr status to set pcm samplerate depending on
-       wb amr status when ril is connected. */
-    if(_ril_get_wb_amr)
-        _ril_get_wb_amr(ril->client, ril_set_wb_amr_callback);
 
     return 0;
 }
@@ -113,9 +133,6 @@ int ril_open(struct ril_handle *ril)
     _ril_set_two_mic_control = dlsym(ril->handle, "SetTwoMicControl");
     _ril_register_unsolicited_handler = dlsym(ril->handle,
                                               "RegisterUnsolicitedHandler");
-    /* since this function is not supported in all RILs, don't require it */
-    _ril_get_wb_amr = dlsym(ril->handle, "GetWB_AMR");
-
     if (!_ril_open_client || !_ril_close_client || !_ril_connect ||
         !_ril_is_connected || !_ril_disconnect || !_ril_set_call_volume ||
         !_ril_set_call_audio_path || !_ril_set_two_mic_control || !_ril_set_call_clock_sync ||
@@ -132,9 +149,8 @@ int ril_open(struct ril_handle *ril)
         return -1;
     }
 
-    /* register the wideband AMR callback */
-    _ril_register_unsolicited_handler(ril->client, RIL_UNSOL_WB_AMR_STATE,
-                                      ril_set_wb_amr_callback);
+    _ril_register_unsolicited_handler(ril->client, RIL_UNSOL_AM,
+                                      ril_am_callback);
 
     property_get(VOLUME_STEPS_PROPERTY, property, VOLUME_STEPS_DEFAULT);
     ril->volume_steps_max = atoi(property);

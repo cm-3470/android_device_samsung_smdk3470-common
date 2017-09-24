@@ -32,6 +32,8 @@
 #include <system/audio.h>
 #include <hardware/audio.h>
 
+#include "ril_interface.h"
+
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
@@ -54,6 +56,10 @@ namespace wrapper {
 struct wrapper_audio_device {
     struct audio_hw_device device;
     struct audio_hw_device *wrapped_device;
+
+    /* RIL */
+    struct ril_handle ril;
+    int ril_connected_notified;
 };
 
 struct wrapper_stream_out {
@@ -73,11 +79,13 @@ struct wrapper_stream_in {
 #define WRAPPED_DEVICE(d) (((struct wrapper_audio_device*) d)->wrapped_device)
 
 #define WRAPPED_DEVICE_CALL(d, func, ...) ({\
+    checkRilConnection(d); \
     WRAPPED_DEVICE(d)->func(WRAPPED_DEVICE(d), ##__VA_ARGS__);   \
 })
 
 #define RETURN_WRAPPED_DEVICE_CALL(d, func, ...) ({\
     ALOGV("%s", __FUNCTION__); \
+    checkRilConnection(d); \
     return WRAPPED_DEVICE(d)->func(WRAPPED_DEVICE(d), ##__VA_ARGS__); \
 })
 
@@ -141,6 +149,33 @@ int load_vendor_module(const hw_module_t* wrapper_module, const char* name,
  out:
     *device = NULL;
     return ret;
+}
+
+/* 
+ * Check if a RIL connection can be established.
+ * If so, tell the stock HAL about it.
+ */
+static void checkRilConnection(struct audio_hw_device *dev)
+{
+    struct wrapper_audio_device *wrapper_dev = (struct wrapper_audio_device *)dev;
+    if (!wrapper_dev->ril_connected_notified) {
+        if (ril_connect_if_required(&wrapper_dev->ril) == 0) {
+            ALOGI("%s: setting audio parameter - %s", __FUNCTION__, "ril_state_connected=1");
+            WRAPPED_DEVICE(dev)->set_parameters(WRAPPED_DEVICE(dev), "ril_state_connected=1");            
+            wrapper_dev->ril_connected_notified = 1;
+        }
+    }
+}
+
+/*
+ * Callback for WB-AMR status report from RIL.
+ * Sets audio parameter "wb_amr" for HD-Voice (Wideband AMR).
+ */
+static void audio_set_wb_amr_callback(struct wrapper_audio_device *adev, int enable)
+{
+    char* param = enable ? "wb_amr=on" : "wb_amr=off";
+    ALOGI("%s: setting audio parameter - %s", __FUNCTION__, param);
+    WRAPPED_DEVICE_CALL(adev, set_parameters, param);
 }
 
 
@@ -510,8 +545,15 @@ static int adev_dump(const audio_hw_device_t *dev, int fd)
 
 static int adev_close(hw_device_t *dev)
 {
+    struct wrapper_audio_device *wrapper_dev = (struct wrapper_audio_device *)dev;
+
     ALOGI("%s", __FUNCTION__);
+
     WRAPPED_DEVICE(dev)->common.close((hw_device_t*)&(WRAPPED_DEVICE(dev)));
+
+    /* RIL */
+    ril_close(&wrapper_dev->ril);
+
     free(dev);
     return 0;
 }
@@ -562,9 +604,22 @@ static int adev_open(const hw_module_t* module, const char* name,
     adev->device.close_input_stream = adev_close_input_stream;
     adev->device.dump = adev_dump;
 
+    /* RIL */
+    ril_open(&adev->ril);
+
+    /* Stock audio-hal wants to know when RIL connection is possible ("ril_state_connected=1"),
+     * otherwise calls will be silent.
+     * ril_connect_if_required() will fail, as the RIL socket is not present yet.
+     * The ConnectionStateListener from RIL.java can also not be used here.
+     * We could set in when adev_set_mode() switches to incall mode but that might be too late
+     * to prevent silent calls.
+     * So we will simply try to connect on every audio call and tell stock hal when we were
+     * able to do so. */
+    adev->ril_connected_notified = 0;
+
     /* register callback for wideband AMR setting */
-    //ril_register_set_wb_amr_callback(audio_set_wb_amr_callback, (void *)adev);
-    
+    ril_register_set_wb_amr_callback(audio_set_wb_amr_callback, (void *)adev);
+
     *device = &adev->device.common;
     
     return 0;

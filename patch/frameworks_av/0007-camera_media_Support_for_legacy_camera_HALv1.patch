@@ -1,0 +1,151 @@
+From 136afb5dd895ceb5d4361d6211fb30dc6df1ccfc Mon Sep 17 00:00:00 2001
+From: Simon Shields <keepcalm444@gmail.com>
+Date: Thu, 6 Oct 2016 20:25:32 +1100
+Subject: [PATCH] camera/media: Support for legacy camera HALv1
+
+Pre 7.0 camera HALv1 can not share its video buffers
+across different processes, which requires us to
+disable this security feature.
+
+This change allows devices to re-integrate cameraserver
+and mediaserver which is the first step to support older
+prebuilt camera HALs. A follow-up change will add back
+support for legacy buffer handling.
+
+To enable:
+TARGET_HAS_LEGACY_CAMERA_HAL1 := true
+media.stagefright.legacyencoder=true
+media.stagefright.less-secure=true
+
+Change-Id: I4fcc8907ea235b7e83af26122b4da97ca5117816
+
+mediaserver: Update HALv1 dependencies for 8.0.0
+
+ * Add libcameraservice shared library dependency
+ * Add new android.hardware.camera.common@1.0 and
+    android.hardware.camera.provider@2.4 shared
+    libraries and exported headers HAL dependencies
+
+ * Add libarect static library dependency
+
+ * When TARGET_HAS_LEGACY_CAMERA_HAL1 is set, the mediaserver
+    includes CameraService.h but exported headers are missing
+
+ * Error upon build due to missing libcameraservice linkage:
+    fatal error: 'android/hardware/BnCameraService.h' file not found
+
+Change-Id: Ib6bb8a4e9ef18606c64e2dff13504d2eeaac13b1
+Signed-off-by: Adrian DC <radian.dc@gmail.com>
+---
+ camera/cameraserver/Android.mk                     |  4 ++++
+ media/mediaserver/Android.mk                       | 12 ++++++++++++
+ media/mediaserver/main_mediaserver.cpp             |  6 ++++++
+ services/camera/libcameraservice/Android.mk        |  4 ++++
+ services/camera/libcameraservice/CameraService.cpp |  6 ++++++
+ 5 files changed, 32 insertions(+)
+
+diff --git a/camera/cameraserver/Android.mk b/camera/cameraserver/Android.mk
+index d32e2526b..1df66d891 100644
+--- a/camera/cameraserver/Android.mk
++++ b/camera/cameraserver/Android.mk
+@@ -14,6 +14,9 @@
+ 
+ LOCAL_PATH:= $(call my-dir)
+ 
++ifeq ($(TARGET_HAS_LEGACY_CAMERA_HAL1),true)
++$(warning Target has integrated cameraserver into mediaserver. This is weakening security measures introduced in 7.0)
++else
+ include $(CLEAR_VARS)
+ 
+ LOCAL_SRC_FILES:= \
+@@ -41,3 +44,4 @@ LOCAL_CFLAGS += -Wall -Wextra -Werror -Wno-unused-parameter
+ LOCAL_INIT_RC := cameraserver.rc
+ 
+ include $(BUILD_EXECUTABLE)
++endif
+diff --git a/media/mediaserver/Android.mk b/media/mediaserver/Android.mk
+index f7597db81..fdf0ca3d7 100644
+--- a/media/mediaserver/Android.mk
++++ b/media/mediaserver/Android.mk
+@@ -38,4 +38,16 @@ LOCAL_INIT_RC := mediaserver.rc
+ 
+ LOCAL_CFLAGS := -Werror -Wall
+ 
++ifeq ($(TARGET_HAS_LEGACY_CAMERA_HAL1),true)
++    LOCAL_CFLAGS += -DNO_CAMERA_SERVER
++
++    LOCAL_SHARED_LIBRARIES += \
++        libcameraservice \
++        android.hardware.camera.common@1.0 \
++        android.hardware.camera.provider@2.4
++
++     LOCAL_STATIC_LIBRARIES += \
++        libarect
++endif
++
+ include $(BUILD_EXECUTABLE)
+diff --git a/media/mediaserver/main_mediaserver.cpp b/media/mediaserver/main_mediaserver.cpp
+index ecddc4827..0abe6ac95 100644
+--- a/media/mediaserver/main_mediaserver.cpp
++++ b/media/mediaserver/main_mediaserver.cpp
+@@ -25,6 +25,9 @@
+ #include "RegisterExtensions.h"
+ 
+ // from LOCAL_C_INCLUDES
++#ifdef NO_CAMERA_SERVER
++#include "CameraService.h"
++#endif
+ #include "IcuUtils.h"
+ #include "MediaPlayerService.h"
+ #include "ResourceManagerService.h"
+@@ -41,6 +44,9 @@ int main(int argc __unused, char **argv __unused)
+     InitializeIcuOrDie();
+     MediaPlayerService::instantiate();
+     ResourceManagerService::instantiate();
++#ifdef NO_CAMERA_SERVER
++    CameraService::instantiate();
++#endif
+     registerExtensions();
+     ProcessState::self()->startThreadPool();
+     IPCThreadState::self()->joinThreadPool();
+diff --git a/services/camera/libcameraservice/Android.mk b/services/camera/libcameraservice/Android.mk
+index 502ac5d86..80c04b9e2 100644
+--- a/services/camera/libcameraservice/Android.mk
++++ b/services/camera/libcameraservice/Android.mk
+@@ -91,6 +91,10 @@ LOCAL_EXPORT_C_INCLUDE_DIRS := \
+ 
+ LOCAL_CFLAGS += -Wall -Wextra -Werror
+ 
++ifeq ($(TARGET_HAS_LEGACY_CAMERA_HAL1),true)
++    LOCAL_CFLAGS += -DNO_CAMERA_SERVER
++endif
++
+ LOCAL_MODULE:= libcameraservice
+ 
+ include $(BUILD_SHARED_LIBRARY)
+diff --git a/services/camera/libcameraservice/CameraService.cpp b/services/camera/libcameraservice/CameraService.cpp
+index c2b71a237..0d856e6be 100644
+--- a/services/camera/libcameraservice/CameraService.cpp
++++ b/services/camera/libcameraservice/CameraService.cpp
+@@ -739,7 +739,11 @@ int32_t CameraService::mapToInterface(StatusInternal status) {
+ Status CameraService::initializeShimMetadata(int cameraId) {
+     int uid = getCallingUid();
+ 
++#ifdef NO_CAMERA_SERVER
++    String16 internalPackageName("media");
++#else
+     String16 internalPackageName("cameraserver");
++#endif
+     String8 id = String8::format("%d", cameraId);
+     Status ret = Status::ok();
+     sp<Client> tmp = nullptr;
+@@ -820,7 +824,9 @@ Status CameraService::getLegacyParametersLazy(int cameraId,
+ static bool isTrustedCallingUid(uid_t uid) {
+     switch (uid) {
+         case AID_MEDIA:        // mediaserver
++#ifndef NO_CAMERA_SERVER
+         case AID_CAMERASERVER: // cameraserver
++#endif
+         case AID_RADIO:        // telephony
+             return true;
+         default:

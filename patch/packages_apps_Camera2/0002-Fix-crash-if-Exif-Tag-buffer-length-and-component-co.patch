@@ -1,0 +1,27 @@
+From 6bc85fad1cf92a333e777b7293a97637e4773bf4 Mon Sep 17 00:00:00 2001
+From: tobigun <hennymcc@yahoo.de>
+Date: Sun, 19 Jul 2015 14:15:38 +0200
+Subject: [PATCH 2/2] Fix crash if Exif-Tag buffer-length and component-count
+ are both 0
+
+Change-Id: Iad9b60d135b4f682c08c3bfc9698cdd10e1086ab
+---
+ src/com/android/camera/exif/ExifOutputStream.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/com/android/camera/exif/ExifOutputStream.java b/src/com/android/camera/exif/ExifOutputStream.java
+index 3c7ed7d..d7c8320 100644
+--- a/src/com/android/camera/exif/ExifOutputStream.java
++++ b/src/com/android/camera/exif/ExifOutputStream.java
+@@ -482,7 +482,7 @@ class ExifOutputStream extends FilterOutputStream {
+         switch (tag.getDataType()) {
+             case ExifTag.TYPE_ASCII:
+                 byte buf[] = tag.getStringByte();
+-                if (buf.length == tag.getComponentCount()) {
++                if (buf.length == tag.getComponentCount() && buf.length > 0) {
+                     buf[buf.length - 1] = 0;
+                     dataOutputStream.write(buf);
+                 } else {
+-- 
+2.7.4
+

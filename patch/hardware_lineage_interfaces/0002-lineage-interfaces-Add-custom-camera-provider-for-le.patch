@@ -1,0 +1,145 @@
+From aa21320dec30111f2dc2096296ac737b978e5910 Mon Sep 17 00:00:00 2001
+From: LuK1337 <priv.luk@gmail.com>
+Date: Thu, 21 Sep 2017 22:06:32 +0200
+Subject: [PATCH 2/2] lineage/interfaces: Add custom camera provider for legacy
+ devices
+
+* Camera HALs before Treble used to pass camera id
+  in user field, in Treble they are meant to pass
+  pointer to CameraDevice.
+* This patch workarounds this by storing local pointer
+  to CameraDevice and not relying on user field.
+
+Change-Id: I415343d02edd96d8da56e1f25bf23ffce83fb2ce
+---
+ camera/device/1.0/Android.bp       |  2 +-
+ camera/device/1.0/CameraDevice.cpp | 22 +++++++++++++---------
+ camera/provider/Android.bp         |  4 ++--
+ camera/provider/CameraProvider.cpp |  2 +-
+ 4 files changed, 17 insertions(+), 13 deletions(-)
+
+diff --git a/camera/device/1.0/Android.bp b/camera/device/1.0/Android.bp
+index fa246c1..3c09946 100644
+--- a/camera/device/1.0/Android.bp
++++ b/camera/device/1.0/Android.bp
+@@ -1,5 +1,5 @@
+ cc_library_shared {
+-    name: "camera.device@1.0-impl",
++    name: "camera.device@1.0-impl.legacy",
+     defaults: ["hidl_defaults"],
+     proprietary: true,
+     srcs: [
+diff --git a/camera/device/1.0/CameraDevice.cpp b/camera/device/1.0/CameraDevice.cpp
+index c53c0d8..63e5c40 100644
+--- a/camera/device/1.0/CameraDevice.cpp
++++ b/camera/device/1.0/CameraDevice.cpp
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-#define LOG_TAG "CamDev@1.0-impl"
++#define LOG_TAG "CamDev@1.0-impl.legacy"
+ #include <hardware/camera.h>
+ #include <hardware/gralloc1.h>
+ #include <hidlmemory/mapping.h>
+@@ -36,6 +36,8 @@ using ::android::hardware::graphics::common::V1_0::PixelFormat;
+ 
+ HandleImporter CameraDevice::sHandleImporter;
+ 
++static CameraDevice *sCameraDevice;
++
+ Status CameraDevice::getHidlStatus(const int& status) {
+     switch (status) {
+         case 0: return Status::OK;
+@@ -359,9 +361,10 @@ CameraDevice::CameraHeapMemory::~CameraHeapMemory() {
+ }
+ 
+ // shared memory methods
+-camera_memory_t* CameraDevice::sGetMemory(int fd, size_t buf_size, uint_t num_bufs, void *user) {
++camera_memory_t* CameraDevice::sGetMemory(int fd, size_t buf_size, uint_t num_bufs,
++        void *user __unused) {
+     ALOGV("%s", __FUNCTION__);
+-    CameraDevice* object = static_cast<CameraDevice*>(user);
++    CameraDevice* object = sCameraDevice;
+     if (object->mDeviceCallback == nullptr) {
+         ALOGE("%s: camera HAL request memory while camera is not opened!", __FUNCTION__);
+         return nullptr;
+@@ -403,18 +406,18 @@ void CameraDevice::sPutMemory(camera_memory_t *data) {
+ }
+ 
+ // Callback forwarding methods
+-void CameraDevice::sNotifyCb(int32_t msg_type, int32_t ext1, int32_t ext2, void *user) {
++void CameraDevice::sNotifyCb(int32_t msg_type, int32_t ext1, int32_t ext2, void *user __unused) {
+     ALOGV("%s", __FUNCTION__);
+-    CameraDevice* object = static_cast<CameraDevice*>(user);
++    CameraDevice* object = sCameraDevice;
+     if (object->mDeviceCallback != nullptr) {
+         object->mDeviceCallback->notifyCallback((NotifyCallbackMsg) msg_type, ext1, ext2);
+     }
+ }
+ 
+ void CameraDevice::sDataCb(int32_t msg_type, const camera_memory_t *data, unsigned int index,
+-        camera_frame_metadata_t *metadata, void *user) {
++        camera_frame_metadata_t *metadata, void *user __unused) {
+     ALOGV("%s", __FUNCTION__);
+-    CameraDevice* object = static_cast<CameraDevice*>(user);
++    CameraDevice* object = sCameraDevice;
+     sp<CameraHeapMemory> mem(static_cast<CameraHeapMemory*>(data->handle));
+     if (index >= mem->mNumBufs) {
+         ALOGE("%s: invalid buffer index %d, max allowed is %d", __FUNCTION__,
+@@ -482,9 +485,9 @@ void CameraDevice::handleCallbackTimestamp(
+ }
+ 
+ void CameraDevice::sDataCbTimestamp(nsecs_t timestamp, int32_t msg_type,
+-        const camera_memory_t *data, unsigned index, void *user) {
++        const camera_memory_t *data, unsigned index, void *user __unused) {
+     ALOGV("%s", __FUNCTION__);
+-    CameraDevice* object = static_cast<CameraDevice*>(user);
++    CameraDevice* object = sCameraDevice;
+     // Start refcounting the heap object from here on.  When the clients
+     // drop all references, it will be destroyed (as well as the enclosed
+     // MemoryHeapBase.
+@@ -660,6 +663,7 @@ Return<Status> CameraDevice::open(const sp<ICameraDeviceCallback>& callback) {
+ 
+     initHalPreviewWindow();
+     mDeviceCallback = callback;
++    sCameraDevice = this;
+ 
+     if (mDevice->ops->set_callbacks) {
+         mDevice->ops->set_callbacks(mDevice,
+diff --git a/camera/provider/Android.bp b/camera/provider/Android.bp
+index 26b1e94..e49b654 100644
+--- a/camera/provider/Android.bp
++++ b/camera/provider/Android.bp
+@@ -1,5 +1,5 @@
+ cc_library_shared {
+-    name: "android.hardware.camera.provider@2.4-impl",
++    name: "android.hardware.camera.provider@2.4-impl.legacy",
+     defaults: ["hidl_defaults"],
+     proprietary: true,
+     relative_install_path: "hw",
+@@ -10,7 +10,7 @@ cc_library_shared {
+         "libutils",
+         "libcutils",
+         "android.hardware.camera.device@1.0",
+-        "camera.device@1.0-impl",
++        "camera.device@1.0-impl.legacy",
+         "camera.device@3.2-impl",
+         "android.hardware.camera.provider@2.4",
+         "android.hardware.camera.common@1.0",
+diff --git a/camera/provider/CameraProvider.cpp b/camera/provider/CameraProvider.cpp
+index 19f7bdd..374ff7b 100644
+--- a/camera/provider/CameraProvider.cpp
++++ b/camera/provider/CameraProvider.cpp
+@@ -14,7 +14,7 @@
+  * limitations under the License.
+  */
+ 
+-#define LOG_TAG "CamProvider@2.4-impl"
++#define LOG_TAG "CamProvider@2.4-impl.legacy"
+ #include <android/log.h>
+ 
+ #include "CameraProvider.h"
+-- 
+2.7.4
+

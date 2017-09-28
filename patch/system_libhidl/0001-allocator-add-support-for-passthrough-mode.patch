@@ -1,0 +1,162 @@
+From 797fcb7c6001c29f5f8bd5f1b7c51fb8d60d8a91 Mon Sep 17 00:00:00 2001
+From: Tobias Gunkel <hennymcc@yahoo.de>
+Date: Wed, 27 Sep 2017 21:25:53 +0200
+Subject: [PATCH 1/2] allocator: add support for passthrough mode
+
+With AOSP only hwbinder can be used to find an allocator, passthrough
+mode is not supported.
+
+This patch generates a library
+/system/lib/hw/android.hidl.allocator@1.0-impl.so besides the hw binder
+service /system/bin/hw/android.hidl.allocator@1.0-service. The shared
+library implements HIDL_FETCH_IAllocator so that it can be used for
+passthrough mode. /system/manifest.xml must be changed to passthrough
+mode, otherwise the hwbinder service is used.
+
+    <hal format="hidl">
+        <name>android.hidl.allocator</name>
+        <transport arch="32+64">passthrough</transport>
+        <version>1.0</version>
+        <interface>
+            <name>IAllocator</name>
+            <instance>ashmem</instance>
+        </interface>
+    </hal>
+
+This patch is supposed to fix the transaction errors when CameraDevice
+tries to allocate memory:
+F /system/bin/mediaserver: Status.cpp:149] Failed HIDL return status not
+checked: Status(EX_TRANSACTION_FAILED): 'FAILED_TRANSACTION: '
+
+Change-Id: Ie9393c47b387dc1222117eb075857109be683451
+---
+ transport/allocator/1.0/default/Android.bp    | 20 +++++++++++++
+ transport/allocator/1.0/default/HidlFetch.cpp | 41 +++++++++++++++++++++++++++
+ transport/allocator/1.0/default/HidlFetch.h   | 36 +++++++++++++++++++++++
+ 3 files changed, 97 insertions(+)
+ create mode 100644 transport/allocator/1.0/default/HidlFetch.cpp
+ create mode 100644 transport/allocator/1.0/default/HidlFetch.h
+
+diff --git a/transport/allocator/1.0/default/Android.bp b/transport/allocator/1.0/default/Android.bp
+index d15d7c2..38a6c4c 100644
+--- a/transport/allocator/1.0/default/Android.bp
++++ b/transport/allocator/1.0/default/Android.bp
+@@ -12,6 +12,26 @@
+ // See the License for the specific language governing permissions and
+ // limitations under the License.
+ 
++cc_library_shared {
++    name: "android.hidl.allocator@1.0-impl",
++    relative_install_path: "hw",
++    compile_multilib: "both",
++    cflags: libhidl_flags,
++    srcs: [
++        "AshmemAllocator.cpp",
++        "HidlFetch.cpp"
++    ],
++    shared_libs: [
++        "android.hidl.base@1.0",
++        "android.hidl.allocator@1.0",
++        "libhidlbase",
++        "libbase",
++        "liblog",
++        "libutils",
++        "libcutils",
++    ],
++}
++
+ cc_binary {
+     name: "android.hidl.allocator@1.0-service",
+     relative_install_path: "hw",
+diff --git a/transport/allocator/1.0/default/HidlFetch.cpp b/transport/allocator/1.0/default/HidlFetch.cpp
+new file mode 100644
+index 0000000..5b2529e
+--- /dev/null
++++ b/transport/allocator/1.0/default/HidlFetch.cpp
+@@ -0,0 +1,41 @@
++/*
++ * Copyright (C) 2016 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include "HidlFetch.h"
++
++#include "AshmemAllocator.h"
++
++static std::string kAshmemAllocatorName = "ashmem";
++
++namespace android {
++namespace hidl {
++namespace allocator {
++namespace V1_0 {
++namespace implementation {
++
++IAllocator* HIDL_FETCH_IAllocator(const char* name) {
++    if (name == kAshmemAllocatorName) {
++        return new AshmemAllocator;
++    }
++
++    return nullptr;
++}
++
++}  // namespace implementation
++}  // namespace V1_0
++}  // namespace allocator
++}  // namespace hidl
++}  // namespace android
+diff --git a/transport/allocator/1.0/default/HidlFetch.h b/transport/allocator/1.0/default/HidlFetch.h
+new file mode 100644
+index 0000000..4f9a1c7
+--- /dev/null
++++ b/transport/allocator/1.0/default/HidlFetch.h
+@@ -0,0 +1,36 @@
++/*
++ * Copyright (C) 2016 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#ifndef HIDL_FETCH_H
++#define HIDL_FETCH_H
++
++#include <android/hidl/allocator/1.0/IAllocator.h>
++
++namespace android {
++namespace hidl {
++namespace allocator {
++namespace V1_0 {
++namespace implementation {
++
++extern "C" IAllocator* HIDL_FETCH_IAllocator(const char* name);
++
++}  // namespace implementation
++}  // namespace V1_0
++}  // namespace allocator
++}  // namespace hidl
++}  // namespace android
++
++#endif  // HIDL_FETCH_H
+-- 
+2.7.4
+

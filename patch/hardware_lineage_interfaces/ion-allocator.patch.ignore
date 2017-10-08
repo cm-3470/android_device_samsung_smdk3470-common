@@ -1,0 +1,31 @@
+diff --git a/camera/device/1.0/CameraDevice.cpp b/camera/device/1.0/CameraDevice.cpp
+index 63e5c40..d4207b9 100644
+--- a/camera/device/1.0/CameraDevice.cpp
++++ b/camera/device/1.0/CameraDevice.cpp
+@@ -107,7 +107,7 @@ CameraDevice::CameraDevice(
+         mInitFail = true;
+     }
+ 
+-    mAshmemAllocator = IAllocator::getService("ashmem");
++    mAshmemAllocator = IAllocator::getService("ion");
+     if (mAshmemAllocator == nullptr) {
+         ALOGI("%s: cannot get ashmemAllocator", __FUNCTION__);
+         mInitFail = true;
+@@ -306,7 +306,7 @@ CameraDevice::CameraHeapMemory::CameraHeapMemory(
+     mHidlHandle->data[0] = fcntl(fd, F_DUPFD_CLOEXEC, 0);
+     const size_t pagesize = getpagesize();
+     size_t size = ((buf_size * num_buffers + pagesize-1) & ~(pagesize-1));
+-    mHidlHeap = hidl_memory("ashmem", mHidlHandle, size);
++    mHidlHeap = hidl_memory("ion", mHidlHandle, size);
+     commonInitialization();
+ }
+ 
+@@ -325,7 +325,7 @@ CameraDevice::CameraHeapMemory::CameraHeapMemory(
+                 return;
+             }
+             mHidlHandle = native_handle_clone(mem.handle());
+-            mHidlHeap = hidl_memory("ashmem", mHidlHandle, size);
++            mHidlHeap = hidl_memory("ion", mHidlHandle, size);
+         });
+ 
+     commonInitialization();

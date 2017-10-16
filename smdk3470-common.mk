@@ -122,8 +122,8 @@ PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/handheld_core_hardware.xml:system/etc/permissions/handheld_core_hardware.xml
 
 # FlipFlap
-#PRODUCT_PACKAGES += \
-#    FlipFlap
+PRODUCT_PACKAGES += \
+    FlipFlap
 
 # IPv6 tethering
 PRODUCT_PACKAGES += \

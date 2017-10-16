@@ -20,9 +20,7 @@
 # definition file).
 #
 
-# Do not set vendor to not automatically include hardware/samsung
-#BOARD_VENDOR := samsung
-BOARD_VENDOR := 
+BOARD_VENDOR := samsung
 
 # Architecture
 TARGET_ARCH := arm

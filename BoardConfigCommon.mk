@@ -52,7 +52,6 @@ TARGET_SPECIFIC_HEADER_PATH += device/samsung/smdk3470-common/include
 BOARD_KERNEL_BASE := 0x10000000
 BOARD_KERNEL_PAGESIZE := 2048
 
-TARGET_KERNEL_CROSS_COMPILE_PREFIX := $(PWD)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-
 
 # Platform
 TARGET_BOARD_PLATFORM := exynos3

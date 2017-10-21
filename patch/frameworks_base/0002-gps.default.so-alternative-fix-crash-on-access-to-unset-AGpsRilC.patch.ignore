@@ -1,0 +1,80 @@
+From 42b068cfb3e8102e229b21439c447b6e51c4e6b8 Mon Sep 17 00:00:00 2001
+From: Tobias Gunkel <hennymcc@yahoo.de>
+Date: Sat, 21 Oct 2017 21:24:35 +0200
+Subject: [PATCH] gps.default.so: fix crash on access to unset
+ AGpsRilCallbacks::request_refloc
+
+Since Android 8.0 the AGpsRilCallbacks::request_refloc callback is not
+initialized anymore. Before 8.0 the callback was initialized by
+frameworks/base/services/core/services/core/jni/com_android_server_location_GnssLocationProvider.cpp:
+
+    if (sAGpsRilInterface)
+        sAGpsRilInterface->init(&sAGpsRilCallbacks);
+
+In the new HIDL based
+frameworks/base/services/core/services/core/jni/com_android_server_location_GnssLocationProvider.cpp
+this initializing is missing (maybe by mistake as an AGnssRilCallback
+struct is defined but not used and every other service callbacks is
+initialized?).
+
+The gps.default.so blob does not check if request_refloc is null and
+hence crashes when it tries to execute the callback.
+
+This is a workaround defines a request_refloc callback to avoid those
+crashes.
+
+Stacktrace:
+F libc    : Fatal signal 11 (SIGSEGV), code 1, fault addr 0x4 in tid
+(Thread-4)
+F DEBUG   : *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***
+***
+F DEBUG   : pid: 24009, tid: 24218, name: Thread-4  >>> system_server
+<<<
+F DEBUG   : signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 0x4
+F DEBUG   : Cause: null pointer dereference
+F DEBUG   : backtrace:
+F DEBUG   :     #00 pc 0000e6f0  /system/lib/hw/gps.default.so
+(_Z33proxy__agps_ril_request_refloc_cbj+87)
+F DEBUG   :     #01 pc 0000d2d1  /system/lib/hw/gps.default.so
+(_ZN14MessageHandler21OnGpsExtensionMessageEiPKvj+220)
+F DEBUG   :     #02 pc 0001205d  /system/lib/hw/gps.default.so
+(_ZN8broadcom10GpsiClient25HandleGpsExtensionMessageERNS_18IpcIncomingMessageE+176)
+F DEBUG   :     #03 pc 0001562f  /system/lib/hw/gps.default.so
+(_ZN8broadcom20IpcPipeTransportBase8OnSelectEibbbPv+166)
+F DEBUG   :     #04 pc 00016315  /system/lib/hw/gps.default.so
+(_ZN8broadcom13SelectManager24PerformOneWaitAndProcessEv+608)
+F DEBUG   :     #05 pc 00010481  /system/lib/hw/gps.default.so
+(_ZN8broadcom15ipc_thread_procEPv+8)
+F DEBUG   :     #06 pc 0000ec7b
+/system/vendor/lib/hw/android.hardware.gnss@1.0-impl.so
+(_Z10threadFuncPv+6)
+F DEBUG   :     #07 pc 00047cbf  /system/lib/libc.so
+(_ZL15__pthread_startPv+22)
+F DEBUG   :     #08 pc 0001afdd  /system/lib/libc.so (__start_thread+32)
+
+Change-Id: Ib3d090c1099697a2bd53d9642675995afc2fc7d0
+---
+ .../core/jni/com_android_server_location_GnssLocationProvider.cpp  | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/services/core/jni/com_android_server_location_GnssLocationProvider.cpp b/services/core/jni/com_android_server_location_GnssLocationProvider.cpp
+index edd7d53..7665f44 100644
+--- a/services/core/jni/com_android_server_location_GnssLocationProvider.cpp
++++ b/services/core/jni/com_android_server_location_GnssLocationProvider.cpp
+@@ -1193,6 +1193,13 @@ static jboolean android_location_GnssLocationProvider_init(JNIEnv* env, jobject
+         ALOGE("Unable to Initialize AGnss interface\n");
+     }
+ 
++    sp<IAGnssRilCallback> aGnssRilCbIface = new AGnssRilCallback();
++    if (agnssRilIface != nullptr) {
++        agnssRilIface->setCallback(aGnssRilCbIface);
++    } else {
++        ALOGE("Unable to initialize AGnss Ril interface\n");
++    }
++
+     sp<IGnssGeofenceCallback> gnssGeofencingCbIface = new GnssGeofenceCallback();
+     if (gnssGeofencingIface != nullptr) {
+       gnssGeofencingIface->setCallback(gnssGeofencingCbIface);
+-- 
+2.7.4
+

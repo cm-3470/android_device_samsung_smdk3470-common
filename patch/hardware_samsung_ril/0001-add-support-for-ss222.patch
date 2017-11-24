@@ -1,7 +1,7 @@
-From 8a93fa4ca1e70533fd0fe10c779d56484853cf2c Mon Sep 17 00:00:00 2001
+From 0cf380001f3f8f83e94003aff75ca33d90436635 Mon Sep 17 00:00:00 2001
 From: tobigun <hennymcc@yahoo.de>
 Date: Fri, 27 May 2016 13:29:42 +0200
-Subject: [PATCH 3/4] ril: add support for ss222 (G800F/Y/M)
+Subject: [PATCH] ril: add support for ss222 (G800F/Y/M)
 
 Change-Id: Id1dff668f979ede208a0defa83ab6f49b4b3e712
 ---
@@ -25,23 +25,23 @@ index 0b76b81..f8a63be 100644
  endif
  endif
 diff --git a/ril/libril/Android.mk b/ril/libril/Android.mk
-index 4651122..4fd34d8 100644
+index b0f982d..8f6f511 100644
 --- a/ril/libril/Android.mk
 +++ b/ril/libril/Android.mk
-@@ -28,7 +28,7 @@ endif
+@@ -35,7 +35,7 @@ endif
  ifeq ($(BOARD_MODEM_TYPE),xmm6260)
- LOCAL_CFLAGS := -DMODEM_TYPE_XMM6260
+ LOCAL_CFLAGS += -DMODEM_TYPE_XMM6260
  endif
 -ifneq ($(filter m7450 mdm9x35 ss333 tss310 xmm7260,$(BOARD_MODEM_TYPE)),)
 +ifneq ($(filter m7450 mdm9x35 ss222 ss333 tss310 xmm7260,$(BOARD_MODEM_TYPE)),)
- LOCAL_CFLAGS := -DSAMSUNG_NEXT_GEN_MODEM
+ LOCAL_CFLAGS += -DSAMSUNG_NEXT_GEN_MODEM
  endif
  
 diff --git a/ril/libril/ril.cpp b/ril/libril/ril.cpp
-index ceb91c0..3425391 100644
+index 60ee153..a25fe75 100755
 --- a/ril/libril/ril.cpp
 +++ b/ril/libril/ril.cpp
-@@ -181,6 +181,8 @@ static pthread_t s_tid_dispatch;
+@@ -180,6 +180,8 @@ static pthread_t s_tid_dispatch;
  static pthread_t s_tid_reader;
  static int s_started = 0;
  
@@ -50,7 +50,7 @@ index ceb91c0..3425391 100644
  static int s_fdDebug = -1;
  static int s_fdDebug_socket2 = -1;
  
-@@ -5435,6 +5437,14 @@ void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
+@@ -5813,6 +5815,14 @@ void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
          memcpy(s_lastNITZTimeData, p.data(), p.dataSize());
      }
  
@@ -65,7 +65,7 @@ index ceb91c0..3425391 100644
      // Normal exit
      return;
  
-@@ -5444,6 +5454,14 @@ error_exit:
+@@ -5822,6 +5832,14 @@ error_exit:
      }
  }
  

@@ -1,4 +1,4 @@
-From 8694c152f99d231f483778437345552c0fcf4c22 Mon Sep 17 00:00:00 2001
+From 85da5a8db66284461c301b79a5b5beaac28a828e Mon Sep 17 00:00:00 2001
 From: Tobias Gunkel <hennymcc@yahoo.de>
 Date: Wed, 7 Sep 2016 21:40:30 +0200
 Subject: [PATCH] av: Add samsung wfd service
@@ -8,11 +8,11 @@ Change-Id: I0e2811215435d3fc9bad43721d0cc2a7fbf4d339
  include/media/IWFDService.h           |  70 ++++++++++++++
  include/media/WFDService.h            |  60 ++++++++++++
  include/media/WFDServiceListener.h    |  52 +++++++++++
- media/libmedia/Android.mk             |   7 ++
+ media/libmedia/Android.bp             |   3 +
  media/libmedia/IWFDService.cpp        | 166 ++++++++++++++++++++++++++++++++++
  media/libmedia/WFDService.cpp         |  75 +++++++++++++++
  media/libmedia/WFDServiceListener.cpp |  46 ++++++++++
- 7 files changed, 476 insertions(+)
+ 7 files changed, 472 insertions(+)
  create mode 100644 include/media/IWFDService.h
  create mode 100644 include/media/WFDService.h
  create mode 100644 include/media/WFDServiceListener.h
@@ -220,24 +220,20 @@ index 0000000..cc80549
 +
 +}
 +#endif
-diff --git a/media/libmedia/Android.mk b/media/libmedia/Android.mk
-index e667786..4a9bcc0 100644
---- a/media/libmedia/Android.mk
-+++ b/media/libmedia/Android.mk
-@@ -59,6 +59,13 @@ LOCAL_SRC_FILES += \
-     omx/1.0/WOmxNode.cpp \
-     omx/1.0/WOmxObserver.cpp \
+diff --git a/media/libmedia/Android.bp b/media/libmedia/Android.bp
+index a462f3a..776de9b 100644
+--- a/media/libmedia/Android.bp
++++ b/media/libmedia/Android.bp
+@@ -55,6 +55,9 @@ cc_defaults {
+         "omx/1.0/WOmxBufferSource.cpp",
+         "omx/1.0/WOmxNode.cpp",
+         "omx/1.0/WOmxObserver.cpp",
++        "IWFDService.cpp",
++        "WFDService.cpp",
++        "WFDServiceListener.cpp",
+     ],
  
-+ifeq ($(BOARD_USES_WFD_SERVICE),true)
-+LOCAL_SRC_FILES += \
-+    IWFDService.cpp \
-+    WFDService.cpp \
-+    WFDServiceListener.cpp
-+endif
-+
- LOCAL_SHARED_LIBRARIES := \
-         libui liblog libcutils libutils libbinder libsonivox libicuuc libicui18n libexpat \
-         libcamera_client libstagefright_foundation \
+     aidl: {
 diff --git a/media/libmedia/IWFDService.cpp b/media/libmedia/IWFDService.cpp
 new file mode 100644
 index 0000000..923c8f6

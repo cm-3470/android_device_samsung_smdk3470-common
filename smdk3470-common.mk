@@ -116,6 +116,12 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     qcom.bluetooth.soc=rome
 
+# FM
+PRODUCT_PACKAGES += \
+   FMRadio \
+   brcm-uim-sysfs \
+   libfmjni
+
 # Storage
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.sys.sdcardfs=true

@@ -68,6 +68,9 @@ TARGET_EXYNOS3_AUDIO_FROM_SOURCE := false
 # Lollipop Audio HAL is incompatible with Android M (see http://review.cyanogenmod.org/#/c/121831/)
 TARGET_TINY_ALSA_IGNORE_SILENCE_SIZE := true
 
+# FM
+BOARD_HAVE_BCM_FM := true
+
 # Bluetooth
 BOARD_HAVE_BLUETOOTH := true
 BOARD_HAVE_BLUETOOTH_BCM := true

@@ -17,7 +17,7 @@
  */
 
 #define LOG_TAG "audio_hw_primary"
-/*#define LOG_NDEBUG 0*/
+#define LOG_NDEBUG 0
 /*#define VERY_VERY_VERBOSE_LOGGING*/
 #ifdef VERY_VERY_VERBOSE_LOGGING
 #define ALOGVV ALOGV
@@ -186,6 +186,39 @@ static struct pcm_device_profile pcm_device_capture_sco = {
     .devices = AUDIO_DEVICE_IN_BLUETOOTH_SCO_HEADSET,
 };
 
+static struct pcm_device_profile pcm_device_capture_fm = {
+    .config = {
+        .channels = SCO_DEFAULT_CHANNEL_COUNT,
+        .rate = SCO_DEFAULT_SAMPLING_RATE,
+        .period_size = SCO_PERIOD_SIZE,
+        .period_count = SCO_PERIOD_COUNT,
+        .format = PCM_FORMAT_S16_LE,
+        .start_threshold = CAPTURE_START_THRESHOLD,
+        .stop_threshold = 0,
+        .silence_threshold = 0,
+        .avail_min = 0,
+    },
+    .card = SOUND_CARD,
+    .id = SOUND_CAPTURE_SCO_DEVICE,
+    .type = PCM_CAPTURE,
+    .devices = AUDIO_DEVICE_IN_FM_TUNER,
+};
+struct pcm_config pcm_config_fm = {
+    .channels = 1,
+    .rate = SCO_DEFAULT_SAMPLING_RATE,
+    .period_size = SCO_PERIOD_SIZE,
+    .period_count = SCO_PERIOD_COUNT,
+    .format = PCM_FORMAT_S16_LE,
+};
+
+struct pcm_config pcm_config_fm_wb = {
+    .channels = 1,
+    .rate = SCO_WB_SAMPLING_RATE,
+    .period_size = SCO_PERIOD_SIZE,
+    .period_count = SCO_PERIOD_COUNT,
+    .format = PCM_FORMAT_S16_LE,
+};
+
 #ifdef SOUND_CAPTURE_HOTWORD_DEVICE
 static struct pcm_device_profile pcm_device_hotword_streaming = {
     .config = {
@@ -212,6 +245,7 @@ static struct pcm_device_profile * const pcm_devices[] = {
     &pcm_device_capture_low_latency,
     &pcm_device_playback_sco,
     &pcm_device_capture_sco,
+    &pcm_device_capture_fm,
 #ifdef SOUND_CAPTURE_LOOPBACK_AEC_DEVICE
     &pcm_device_capture_loopback_aec,
 #endif
@@ -467,6 +501,7 @@ static const char * const device_table[SND_DEVICE_MAX] = {
     [SND_DEVICE_IN_VOICE_REC_HEADSET_MIC] = "voice-rec-headset-mic",
     [SND_DEVICE_IN_VOICE_REC_MIC] = "voice-rec-mic",
     [SND_DEVICE_IN_LOOPBACK_AEC] = "loopback-aec",
+    [SND_DEVICE_IN_FM] = "fm-in",
 };
 
 static struct mixer_card *adev_get_mixer_for_card(struct audio_device *adev, int card)
@@ -600,6 +635,8 @@ static struct pcm_device_profile *get_pcm_device(usecase_type_t uc_type, audio_d
 
     devices &= ~AUDIO_DEVICE_BIT_IN;
     for (i = 0; pcm_devices[i] != NULL; i++) {
+                        ALOGE("check type=%d (%d), %d=%d", pcm_devices[i]->type, uc_type, devices, pcm_devices[i]->devices);
+
         if ((pcm_devices[i]->type == uc_type) &&
                 (devices & pcm_devices[i]->devices))
             break;
@@ -835,6 +872,9 @@ static snd_device_t get_input_snd_device(struct audio_device *adev, audio_device
             }
             /* TODO: set echo reference */
         }
+    } else if (source == AUDIO_SOURCE_FM_TUNER) {
+        //in_device = AUDIO_DEVICE_IN_FM_TUNER;
+        snd_device = SND_DEVICE_IN_FM;
     } else if (source == AUDIO_SOURCE_DEFAULT) {
         goto exit;
     }
@@ -2173,6 +2213,35 @@ static int stop_input_stream(struct stream_in *in)
     return 0;
 }
 
+void start_fm(struct pcm_device *pcm_device)
+{
+    ALOGV("%s: Opening FM SCO PCMs", __func__);
+
+    pcm_device->sound_trigger_handle = 0;
+    pcm_device->pcm = pcm_open(SOUND_CARD,
+                                   SOUND_CAPTURE_SCO_DEVICE,
+                                   PCM_IN|PCM_MONOTONIC,
+                                   &pcm_config_fm/*_wb*/);
+    if (!pcm_device->pcm) {
+        ALOGE("%s: cannot open PCM SCO TX stream=null: %s",
+              __func__, pcm_get_error(pcm_device->pcm));
+        goto err_sco_tx;
+    }
+    if (pcm_device->pcm && !pcm_is_ready(pcm_device->pcm)) {
+        ALOGE("%s: cannot open PCM SCO TX stream: %s",
+              __func__, pcm_get_error(pcm_device->pcm));
+        goto err_sco_tx;
+    }
+
+    pcm_start(pcm_device->pcm);
+
+    return;
+
+err_sco_tx:
+    pcm_close(pcm_device->pcm);
+    pcm_device->pcm = NULL;
+}
+
 static int start_input_stream(struct stream_in *in)
 {
     /* Enable output device and stream routing controls */
@@ -2310,17 +2379,27 @@ static int start_input_stream(struct stream_in *in)
         }
         ALOGV("Opened DSP successfully");
     } else {
+        ALOGV("Opening FM");
+goto skip_pcm_handling;
+//start_fm(pcm_device);
+
+
+/*
         pcm_device->sound_trigger_handle = 0;
         pcm_device->pcm = pcm_open(pcm_device->pcm_profile->card, pcm_device->pcm_profile->id,
                                    PCM_IN | PCM_MONOTONIC, &pcm_device->pcm_profile->config);
+        ALOGV("Opening FM1");
 
         if (pcm_device->pcm && !pcm_is_ready(pcm_device->pcm)) {
+        ALOGV("Opening FM2");
             ALOGE("%s: %s", __func__, pcm_get_error(pcm_device->pcm));
             pcm_close(pcm_device->pcm);
+        ALOGV("Opening FM3");
             pcm_device->pcm = NULL;
             ret = -EIO;
             goto error_open;
         }
+*/
     }
 
 skip_pcm_handling:
@@ -2952,6 +3031,7 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
                     start_voice_call(adev);
                 }
             }
+start_fm(pcm_device);
         }
 
         pthread_mutex_unlock(&adev->lock);
@@ -4374,9 +4454,12 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
                                audio_channel_count_from_in_mask(config->channel_mask)) != 0)
         return -EINVAL;
 
+    ALOGV("%s: enter2", __func__);
     usecase_type_t usecase_type = source == AUDIO_SOURCE_HOTWORD ?
                 PCM_HOTWORD_STREAMING : flags & AUDIO_INPUT_FLAG_FAST ?
                         PCM_CAPTURE_LOW_LATENCY : PCM_CAPTURE;
+    ALOGV("%s: enter2: %d, usecase(%d)", __func__, source, usecase_type);
+
     pcm_profile = get_pcm_device(usecase_type, devices);
     if (pcm_profile == NULL && usecase_type == PCM_CAPTURE_LOW_LATENCY) {
         // a low latency profile may not exist for that device, fall back
@@ -4389,10 +4472,12 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     if (pcm_profile == NULL)
         return -EINVAL;
 
+    ALOGV("%s: enter3", __func__);
     in = (struct stream_in *)calloc(1, sizeof(struct stream_in));
     if (in == NULL) {
         return -ENOMEM;
     }
+    ALOGV("%s: enter4", __func__);
 
     in->stream.common.get_sample_rate = in_get_sample_rate;
     in->stream.common.set_sample_rate = in_set_sample_rate;

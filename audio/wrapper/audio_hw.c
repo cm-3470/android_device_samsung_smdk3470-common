@@ -64,6 +64,7 @@ struct wrapper_stream_out {
 struct wrapper_stream_in {
     struct audio_stream_in stream;
     struct audio_stream_in *wrapped_stream;
+    struct wrapper_audio_device *wrapper_dev;
 };
 
 
@@ -270,6 +271,18 @@ static int in_dump(const struct audio_stream *stream, int fd)
 
 static int in_set_parameters(struct audio_stream *stream, const char *kvpairs)
 {
+    char kvpairs_buf[256];
+    const char *prefix = "input_source=1998;";
+    if (strncmp(prefix, kvpairs, strlen(prefix)) == 0) {
+        //sprintf(kvpairs_buf, "routing=4");
+        sprintf(kvpairs_buf, "input_source=9;%s", &kvpairs[strlen(prefix)]);
+        kvpairs = kvpairs_buf;
+
+        struct wrapper_audio_device *adev = ((struct wrapper_stream_in*) stream)->wrapper_dev;
+        WRAPPED_DEVICE_CALL(adev, set_parameters, "fm_radio_mute=0");
+        WRAPPED_DEVICE_CALL(adev, set_parameters, "fm_radio_volume=on");
+    }
+    ALOGE("in parameter: %s\n", kvpairs);
     RETURN_WRAPPED_STREAM_IN_COMMON_CALL(stream, set_parameters, kvpairs);
 }
 
@@ -363,6 +376,7 @@ static void adev_close_output_stream(struct audio_hw_device *dev,
 
 static int adev_set_parameters(struct audio_hw_device *dev, const char *kvpairs)
 {
+    ALOGE("adev parameter: %s\n", kvpairs);
     RETURN_WRAPPED_DEVICE_CALL(dev, set_parameters, kvpairs);
 }
 
@@ -448,6 +462,8 @@ static size_t adev_get_input_buffer_size(const struct audio_hw_device *dev,
     RETURN_WRAPPED_DEVICE_CALL(dev, get_input_buffer_size, config);
 }
 
+#define AUDIO_SOURCE_FM_TUNER_SAMSUNG 9
+
 static int adev_open_input_stream(struct audio_hw_device *dev,
                              audio_io_handle_t handle,
                              audio_devices_t devices,
@@ -467,10 +483,15 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     if (!in)
         return -ENOMEM;
 
-    ret = WRAPPED_DEVICE_CALL(dev, open_input_stream, handle, devices, config, &WRAPPED_STREAM_IN(in), flags, address, source);
+    audio_source_t source_hal = source;
+    if (source == AUDIO_SOURCE_FM_TUNER)
+        source_hal = AUDIO_SOURCE_FM_TUNER_SAMSUNG;
+    ALOGE("%s: open source %d", __FUNCTION__, source_hal);
+    ret = WRAPPED_DEVICE_CALL(dev, open_input_stream, handle, devices, config, &WRAPPED_STREAM_IN(in), flags, address, source_hal);
     if(ret < 0)
         goto err_open;
 
+    in->wrapper_dev = (struct wrapper_audio_device *)dev;
     in->stream.common.get_sample_rate = in_get_sample_rate;
     in->stream.common.set_sample_rate = in_set_sample_rate;
     in->stream.common.get_buffer_size = in_get_buffer_size;
@@ -486,6 +507,9 @@ static int adev_open_input_stream(struct audio_hw_device *dev,
     in->stream.set_gain = in_set_gain;
     in->stream.read = in_read;
     in->stream.get_input_frames_lost = in_get_input_frames_lost;
+
+    if (source == AUDIO_SOURCE_FM_TUNER)
+        WRAPPED_STREAM_IN_COMMON_CALL(in, set_parameters, "input_source=9;routing=4");
 
     *stream_in = &in->stream;
     return 0;

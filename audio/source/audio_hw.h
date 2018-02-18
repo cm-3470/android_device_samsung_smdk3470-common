@@ -23,7 +23,7 @@
 #include <hardware/audio_amplifier.h>
 
 #include <tinyalsa/asoundlib.h>
-#include <tinycompress/tinycompress.h>
+//#include <tinycompress/tinycompress.h>
 /* TODO: remove resampler if possible when AudioFlinger supports downsampling from 48 to 8 */
 #include <audio_utils/resampler.h>
 #include <audio_route/audio_route.h>
@@ -262,7 +262,7 @@ struct stream_out {
     pthread_cond_t              cond;
     struct pcm_config           config;
     struct listnode             pcm_dev_list;
-    struct compr_config         compr_config;
+    //struct compr_config         compr_config;
     struct compress*            compr;
     int                         standby;
     unsigned int                sample_rate;
@@ -287,7 +287,7 @@ struct stream_out {
 
     stream_callback_t           offload_callback;
     void*                       offload_cookie;
-    struct compr_gapless_mdata  gapless_mdata;
+    //struct compr_gapless_mdata  gapless_mdata;
     int                         send_new_metadata;
 
     struct audio_device*        dev;

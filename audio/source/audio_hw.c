@@ -2552,7 +2552,9 @@ static int stop_output_stream(struct stream_out *out)
     ALOGV("%s: enter: usecase(%d: %s)", __func__,
           out->usecase, use_case_table[out->usecase]);
 
+#if 0
     stop_output_offload_stream(out, &do_disable);
+#endif
 
     if (do_disable)
         ret = disable_output_path_l(out);
@@ -2564,7 +2566,9 @@ static int stop_output_stream(struct stream_out *out)
 static int start_output_stream(struct stream_out *out)
 {
     int ret = 0;
+#if 0
     struct audio_device *adev = out->dev;
+#endif
 
     ALOGV("%s: enter: usecase(%d: %s) devices(%#x) channels(%d)",
           __func__, out->usecase, use_case_table[out->usecase], out->devices, out->config.channels);
@@ -2586,6 +2590,7 @@ static int start_output_stream(struct stream_out *out)
             out->echo_reference = adev->echo_reference;
 #endif
     } else {
+#if 0
         out->compr = compress_open(COMPRESS_CARD, COMPRESS_DEVICE,
                                    COMPRESS_IN, &out->compr_config);
         if (out->compr && !is_compress_ready(out->compr)) {
@@ -2600,6 +2605,7 @@ static int start_output_stream(struct stream_out *out)
 
         if (adev->offload_fx_start_output != NULL)
             adev->offload_fx_start_output(out->handle);
+#endif
     }
     ALOGV("%s: exit", __func__);
     return 0;
@@ -2752,9 +2758,11 @@ static size_t out_get_buffer_size(const struct audio_stream *stream)
 {
     struct stream_out *out = (struct stream_out *)stream;
 
+#if 0
     if (out->usecase == USECASE_AUDIO_PLAYBACK_OFFLOAD) {
         return out->compr_config.fragment_size;
     }
+#endif
 
     return out->config.period_size *
                audio_stream_out_frame_size((const struct audio_stream_out *)stream);
@@ -2786,6 +2794,7 @@ static int do_out_standby_l(struct stream_out *out)
     int status = 0;
 
     out->standby = true;
+#if 0
     if (out->usecase != USECASE_AUDIO_PLAYBACK_OFFLOAD) {
         out_close_pcm_devices(out);
 #ifdef PREPROCESSING_ENABLED
@@ -2809,6 +2818,7 @@ static int do_out_standby_l(struct stream_out *out)
             out->compr = NULL;
         }
     }
+#endif
     status = stop_output_stream(out);
 
     return status;
@@ -2914,8 +2924,10 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
                 if (do_standby)
                     do_out_standby_l(out);
                 else {
+#if 0
                     if (out->usecase == USECASE_AUDIO_PLAYBACK_OFFLOAD)
                         out_set_offload_parameters(adev, uc_info);
+#endif
                     select_devices(adev, out->usecase);
                 }
             }
@@ -2960,9 +2972,11 @@ static int out_set_parameters(struct audio_stream *stream, const char *kvpairs)
 
     amplifier_set_parameters(parms);
 
+#if 0
     if (out->usecase == USECASE_AUDIO_PLAYBACK_OFFLOAD) {
         parse_compress_metadata(out, parms);
     }
+#endif
 
     str_parms_destroy(parms);
 
@@ -3031,9 +3045,12 @@ static int out_set_volume(struct audio_stream_out *stream, float left,
         /* only take left channel into account: the API is for stereo anyway */
         out->muted = (left == 0.0f);
         return 0;
-    } else if (out->usecase == USECASE_AUDIO_PLAYBACK_OFFLOAD) {
+    }
+#if 0
+    else if (out->usecase == USECASE_AUDIO_PLAYBACK_OFFLOAD) {
         out_set_offload_volume(left, right);
     }
+#endif
 
     return -ENOSYS;
 }
@@ -3142,10 +3159,13 @@ static ssize_t out_write(struct audio_stream_out *stream, const void *buffer,
 false_alarm:
 #endif
 
+#if 0
     if (out->usecase == USECASE_AUDIO_PLAYBACK_OFFLOAD) {
         ret = out_write_offload(stream, buffer, bytes);
         return ret;
-    } else {
+    } else 
+#endif
+    {
 #ifdef PREPROCESSING_ENABLED
         if (android_atomic_acquire_load(&adev->echo_reference_generation)
                 != out->echo_reference_generation) {
@@ -3269,9 +3289,11 @@ static int out_get_render_position(const struct audio_stream_out *stream,
 {
     struct stream_out *out = (struct stream_out *)stream;
     *dsp_frames = 0;
+#if 0
     if (out->usecase == USECASE_AUDIO_PLAYBACK_OFFLOAD) {
         return out_get_render_offload_position(out, dsp_frames);
     } else
+#endif
         return -EINVAL;
 }
 
@@ -3305,9 +3327,12 @@ static int out_get_presentation_position(const struct audio_stream_out *stream,
 
     lock_output_stream(out);
 
+#if 0
     if (out->usecase == USECASE_AUDIO_PLAYBACK_OFFLOAD) {
         ret = out_get_presentation_offload_position(out, frames, timestamp);
-    } else {
+    } else 
+#endif
+    {
         if (out->dev->voice.in_call) {
             ALOGVV("%s: in_call, do not handle PCMs", __func__);
             ret = 0;
@@ -3664,6 +3689,7 @@ static ssize_t in_read(struct audio_stream_in *stream, void *buffer,
     ssize_t frames = -1;
     int ret = -1;
     int read_and_process_successful = false;
+return 0;
 
     size_t frames_rq = bytes / audio_stream_in_frame_size(stream);
 
@@ -3956,6 +3982,7 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
     out->config = pcm_profile->config;
 
     /* Init use case and pcm_config */
+#if 0
     if (out->flags & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
         if (config->offload_info.version != AUDIO_INFO_INITIALIZER.version ||
             config->offload_info.size != AUDIO_INFO_INITIALIZER.size) {
@@ -4011,7 +4038,9 @@ static int adev_open_output_stream(struct audio_hw_device *dev,
         ALOGV("%s: offloaded output offload_info version %04x bit rate %d",
                 __func__, config->offload_info.version,
                 config->offload_info.bit_rate);
-    } else if (out->flags & (AUDIO_OUTPUT_FLAG_DEEP_BUFFER)) {
+    } else 
+#endif
+    if (out->flags & (AUDIO_OUTPUT_FLAG_DEEP_BUFFER)) {
         out->usecase = USECASE_AUDIO_PLAYBACK_DEEP_BUFFER;
         out->config = pcm_device_deep_buffer.config;
         out->sample_rate = out->config.rate;
@@ -4094,12 +4123,14 @@ static void adev_close_output_stream(struct audio_hw_device *dev,
 
     ALOGV("%s: enter", __func__);
     out_standby(&stream->common);
+#if 0
     if (out->usecase == USECASE_AUDIO_PLAYBACK_OFFLOAD) {
         destroy_offload_callback_thread(out);
 
         if (out->compr_config.codec != NULL)
             free(out->compr_config.codec);
     }
+#endif
     pthread_cond_destroy(&out->cond);
     pthread_mutex_destroy(&out->lock);
     free(stream);

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ifeq ($(TARGET_AUDIOHAL_VARIANT),samsung)
+#ifeq ($(TARGET_AUDIOHAL_VARIANT),samsung)
 
 LOCAL_PATH := $(call my-dir)
 
@@ -23,9 +23,9 @@ LOCAL_ARM_MODE := arm
 LOCAL_SRC_FILES := \
 	audience.c \
 	audio_hw.c \
-	compress_offload.c \
 	ril_interface.c \
 	voice.c
+	#compress_offload.c \
 
 # TODO: remove resampler if possible when AudioFlinger supports downsampling from 48 to 8
 LOCAL_SHARED_LIBRARIES := \
@@ -34,23 +34,25 @@ LOCAL_SHARED_LIBRARIES := \
 	libaudioutils \
 	libhardware \
 	libtinyalsa \
-	libtinycompress \
 	libaudioroute \
 	libdl \
 	libsecril-client
+	#libtinycompress \
 
 
 LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/include \
 	external/tinyalsa/include \
-	external/tinycompress/include \
 	hardware/libhardware/include \
 	hardware/samsung/ril/libsecril-client \
 	$(call include-path-for, audio-utils) \
 	$(call include-path-for, audio-route) \
 	$(call include-path-for, audio-effects)
 
-LOCAL_CFLAGS := -Werror -Wall
+	#external/tinycompress/include \
+
+#LOCAL_CFLAGS := -Werror -Wall
+LOCAL_CFLAGS := -Wall
 #LOCAL_CFLAGS += -DPREPROCESSING_ENABLED
 #LOCAL_CFLAGS += -DHW_AEC_LOOPBACK
 
@@ -62,4 +64,17 @@ LOCAL_MODULE_TAGS := optional
 
 include $(BUILD_SHARED_LIBRARY)
 
-endif
+# Mixer configurations
+include $(CLEAR_VARS)
+
+LOCAL_MODULE := mixer_paths_0.xml
+LOCAL_MODULE_TAGS := optional eng
+LOCAL_MODULE_CLASS := ETC
+
+LOCAL_SRC_FILES := mixer_paths_0.xml
+
+LOCAL_MODULE_PATH := $(TARGET_OUT_ETC)
+
+include $(BUILD_PREBUILT)
+
+#endif

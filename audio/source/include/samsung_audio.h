@@ -34,7 +34,7 @@
 
 /* Playback */
 #define SOUND_DEEP_BUFFER_DEVICE 3
-#define SOUND_PLAYBACK_DEVICE 4
+#define SOUND_PLAYBACK_DEVICE 3
 #define SOUND_PLAYBACK_SCO_DEVICE 2
 
 /* Capture */

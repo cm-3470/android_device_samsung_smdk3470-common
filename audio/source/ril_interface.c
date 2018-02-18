@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 The CyanogenMod Project
+ * Copyright (C) 2017 Andreas Schneider <asn@cryptomilk.org>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,75 +15,82 @@
  * limitations under the License.
  */
 
-#define ALOG_TAG "audio_hw_primary"
-/*#define ALOG_NDEBUG 0*/
+#define LOG_TAG "audio_hw_ril"
+/*#define LOG_NDEBUG 0*/
 
+#include <errno.h>
 #include <dlfcn.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <utils/Log.h>
 #include <cutils/properties.h>
-#include <errno.h>
 
 #include "ril_interface.h"
 
 #define VOLUME_STEPS_DEFAULT  "5"
 #define VOLUME_STEPS_PROPERTY "ro.config.vc_call_vol_steps"
 
-/* Function pointers */
-void *(*_ril_open_client)(void);
-int (*_ril_close_client)(void *);
-int (*_ril_connect)(void *);
-int (*_ril_is_connected)(void *);
-int (*_ril_disconnect)(void *);
-int (*_ril_set_call_volume)(void *, enum ril_sound_type, int);
-int (*_ril_set_call_audio_path)(void *, enum ril_audio_path, int);
-int (*_ril_set_call_clock_sync)(void *, enum ril_clock_state);
-int (*_ril_set_mute)(void *, int);
-int (*_ril_set_two_mic_control)(void *, enum ril_two_mic_device, enum ril_two_mic_state);
-int (*_ril_register_unsolicited_handler)(void *, int, void *);
-int (*_ril_get_wb_amr)(void *, void *);
-
 /* Audio WB AMR callback */
-void (*_audio_set_wb_amr_callback)(void *, int);
-void *callback_data = NULL;
-
-void ril_register_set_wb_amr_callback(void *function, void *data)
-{
-    _audio_set_wb_amr_callback = function;
-    callback_data = data;
-}
+/*
+ * TODO:
+ * struct audio_device {
+ *     HRilClient client;
+ *     void *data
+ * }
+ * static struct audio_device _audio_devices[64];
+ *
+ * When registering a call back we should store it in the array and when
+ * the callback is triggered find the data pointer based on the client
+ * passed in.
+ */
+static ril_wb_amr_callback _wb_amr_callback;
+static void *_wb_amr_data = NULL;
 
 /* This is the callback function that the RIL uses to
 set the wideband AMR state */
-static int ril_set_wb_amr_callback(void *ril_client,
-                                   const void *data,
-                                   size_t datalen)
+static int ril_internal_wb_amr_callback(HRilClient client __unused,
+                                        const void *data,
+                                        size_t datalen)
 {
-    int enable = ((int *)data)[0];
+    int wb_amr_type = 0;
 
-    if (!callback_data || !_audio_set_wb_amr_callback)
+    if (_wb_amr_data == NULL || _wb_amr_callback == NULL) {
         return -1;
+    }
 
-    _audio_set_wb_amr_callback(callback_data, enable);
+    if (datalen != 1) {
+        return -1;
+    }
+
+    wb_amr_type = *((int *)data);
+
+    _wb_amr_callback(_wb_amr_data, wb_amr_type);
 
     return 0;
 }
 
 static int ril_connect_if_required(struct ril_handle *ril)
 {
-    if (_ril_is_connected(ril->client))
-        return 0;
+    int ok;
+    int rc;
 
-    if (_ril_connect(ril->client) != RIL_CLIENT_ERR_SUCCESS) {
-        ALOGE("ril_connect() failed: %s", strerror(errno));
+    if (ril->client == NULL) {
+        ALOGE("ril->client is NULL");
         return -1;
     }
 
-    /* get wb amr status to set pcm samplerate depending on
-       wb amr status when ril is connected. */
-    if(_ril_get_wb_amr)
-        _ril_get_wb_amr(ril->client, ril_set_wb_amr_callback);
+    ok = isConnected_RILD(ril->client);
+    if (ok) {
+        return 0;
+    }
+
+    rc = Connect_RILD(ril->client);
+    if (rc != RIL_CLIENT_ERR_SUCCESS) {
+        ALOGE("FATAL: Failed to connect to RILD: %s",
+              strerror(errno));
+        return -1;
+    }
 
     return 0;
 }
@@ -91,116 +99,178 @@ int ril_open(struct ril_handle *ril)
 {
     char property[PROPERTY_VALUE_MAX];
 
-    if (!ril)
-        return -1;
-
-    ril->handle = dlopen(RIL_CLIENT_LIBPATH, RTLD_NOW);
-
-    if (!ril->handle) {
-        ALOGE("Cannot open '%s'", RIL_CLIENT_LIBPATH);
+    if (ril == NULL) {
         return -1;
     }
 
-    _ril_open_client = dlsym(ril->handle, "OpenClient_RILD");
-    _ril_close_client = dlsym(ril->handle, "CloseClient_RILD");
-    _ril_connect = dlsym(ril->handle, "Connect_RILD");
-    _ril_is_connected = dlsym(ril->handle, "isConnected_RILD");
-    _ril_disconnect = dlsym(ril->handle, "Disconnect_RILD");
-    _ril_set_call_volume = dlsym(ril->handle, "SetCallVolume");
-    _ril_set_call_audio_path = dlsym(ril->handle, "SetCallAudioPath");
-    _ril_set_call_clock_sync = dlsym(ril->handle, "SetCallClockSync");
-    _ril_set_mute = dlsym(ril->handle, "SetMute");
-    _ril_set_two_mic_control = dlsym(ril->handle, "SetTwoMicControl");
-    _ril_register_unsolicited_handler = dlsym(ril->handle,
-                                              "RegisterUnsolicitedHandler");
-    /* since this function is not supported in all RILs, don't require it */
-    _ril_get_wb_amr = dlsym(ril->handle, "GetWB_AMR");
-
-    if (!_ril_open_client || !_ril_close_client || !_ril_connect ||
-        !_ril_is_connected || !_ril_disconnect || !_ril_set_call_volume ||
-        !_ril_set_call_audio_path || !_ril_set_two_mic_control || !_ril_set_call_clock_sync ||
-        !_ril_register_unsolicited_handler) {
-        ALOGE("Cannot get symbols from '%s'", RIL_CLIENT_LIBPATH);
-        dlclose(ril->handle);
+    ril->client = OpenClient_RILD();
+    if (ril->client == NULL) {
+        ALOGE("OpenClient_RILD() failed");
         return -1;
     }
-
-    ril->client = _ril_open_client();
-    if (!ril->client) {
-        ALOGE("ril_open_client() failed");
-        dlclose(ril->handle);
-        return -1;
-    }
-
-    /* register the wideband AMR callback */
-    _ril_register_unsolicited_handler(ril->client, RIL_UNSOL_WB_AMR_STATE,
-                                      ril_set_wb_amr_callback);
 
     property_get(VOLUME_STEPS_PROPERTY, property, VOLUME_STEPS_DEFAULT);
     ril->volume_steps_max = atoi(property);
-    /* this catches the case where VOLUME_STEPS_PROPERTY does not contain
-    an integer */
-    if (ril->volume_steps_max == 0)
+
+    /*
+     * This catches the case where VOLUME_STEPS_PROPERTY does not contain
+     * an integer
+     */
+    if (ril->volume_steps_max == 0) {
         ril->volume_steps_max = atoi(VOLUME_STEPS_DEFAULT);
+    }
 
     return 0;
 }
 
 int ril_close(struct ril_handle *ril)
 {
-    if (!ril || !ril->handle || !ril->client)
-        return -1;
+    int rc;
 
-    if ((_ril_disconnect(ril->client) != RIL_CLIENT_ERR_SUCCESS) ||
-        (_ril_close_client(ril->client) != RIL_CLIENT_ERR_SUCCESS)) {
-        ALOGE("ril_disconnect() or ril_close_client() failed");
+    if (ril == NULL || ril->client == NULL) {
         return -1;
     }
 
-    dlclose(ril->handle);
+    rc = Disconnect_RILD(ril->client);
+    if (rc != RIL_CLIENT_ERR_SUCCESS) {
+        ALOGE("Disconnect_RILD failed");
+        return -1;
+    }
+
+    rc = CloseClient_RILD(ril->client);
+    if (rc != RIL_CLIENT_ERR_SUCCESS) {
+        ALOGE("CloseClient_RILD() failed");
+        return -1;
+    }
+    ril->client = NULL;
+
     return 0;
 }
 
-int ril_set_call_volume(struct ril_handle *ril, enum ril_sound_type sound_type,
+int ril_set_wb_amr_callback(struct ril_handle *ril,
+                            ril_wb_amr_callback fn,
+                            void *data)
+{
+    int rc;
+
+    if (fn == NULL || data == NULL) {
+        return -1;
+    }
+
+    _wb_amr_callback = fn;
+    _wb_amr_data = data;
+
+    ALOGV("%s: RegisterUnsolicitedHandler(%d, %p)",
+          __func__,
+          RIL_UNSOL_SNDMGR_WB_AMR_REPORT,
+          ril_set_wb_amr_callback);
+
+    /* register the wideband AMR callback */
+    rc = RegisterUnsolicitedHandler(ril->client,
+                                    RIL_UNSOL_SNDMGR_WB_AMR_REPORT,
+                                    (RilOnUnsolicited)ril_internal_wb_amr_callback);
+    if (rc != RIL_CLIENT_ERR_SUCCESS) {
+        ALOGE("%s: Failed to register WB_AMR callback", __func__);
+        ril_close(ril);
+        return -1;
+    }
+
+    return 0;
+}
+
+int ril_set_call_volume(struct ril_handle *ril,
+                        enum _SoundType sound_type,
                         float volume)
 {
-    if (ril_connect_if_required(ril))
-        return 0;
+    int rc;
 
-    return _ril_set_call_volume(ril->client, sound_type,
-                                (int)(volume * ril->volume_steps_max));
+    rc = ril_connect_if_required(ril);
+    if (rc != 0) {
+        ALOGE("%s: Failed to connect to RIL (%s)", __func__, strerror(rc));
+        return 0;
+    }
+
+    rc = SetCallVolume(ril->client,
+                       sound_type,
+                       (int)(volume * ril->volume_steps_max));
+    if (rc != 0) {
+        ALOGE("%s: SetCallVolume() failed, rc=%d", __func__, rc);
+    }
+
+    return rc;
 }
 
-int ril_set_call_audio_path(struct ril_handle *ril,
-                            enum ril_audio_path path,
-                            enum ril_extra_volume mode)
+int ril_set_call_audio_path(struct ril_handle *ril, enum _AudioPath path)
 {
-    if (ril_connect_if_required(ril))
-        return 0;
+    int rc;
 
-    return _ril_set_call_audio_path(ril->client, path, mode);
+    rc = ril_connect_if_required(ril);
+    if (rc != 0) {
+        ALOGE("%s: Failed to connect to RIL (%s)", __func__, strerror(rc));
+        return 0;
+    }
+
+    rc = SetCallAudioPath(ril->client, path);
+    if (rc != 0) {
+        ALOGE("%s: SetCallAudioPath() failed, rc=%d", __func__, rc);
+    }
+
+    return rc;
 }
 
-int ril_set_call_clock_sync(struct ril_handle *ril, enum ril_clock_state state)
+int ril_set_call_clock_sync(struct ril_handle *ril,
+                            enum _SoundClockCondition condition)
 {
-    if (ril_connect_if_required(ril))
-        return 0;
+    int rc;
 
-    return _ril_set_call_clock_sync(ril->client, state);
+    rc = ril_connect_if_required(ril);
+    if (rc != 0) {
+        ALOGE("%s: Failed to connect to RIL (%s)", __func__, strerror(rc));
+        return 0;
+    }
+
+    rc = SetCallClockSync(ril->client, condition);
+    if (rc != 0) {
+        ALOGE("%s: SetCallClockSync() failed, rc=%d", __func__, rc);
+    }
+
+    return rc;
 }
 
-int ril_set_mute(struct ril_handle *ril, enum ril_mute_state state)
+int ril_set_mute(struct ril_handle *ril, enum _MuteCondition condition)
 {
-    if (ril_connect_if_required(ril))
-        return 0;
+    int rc;
 
-    return _ril_set_mute(ril->client, state);
+    rc = ril_connect_if_required(ril);
+    if (rc != 0) {
+        ALOGE("%s: Failed to connect to RIL (%s)", __func__, strerror(rc));
+        return 0;
+    }
+
+    rc = SetMute(ril->client, condition);
+    if (rc != 0) {
+        ALOGE("%s: SetMute() failed, rc=%d", __func__, rc);
+    }
+
+    return rc;
 }
 
-int ril_set_two_mic_control(struct ril_handle *ril, enum ril_two_mic_device device, enum ril_two_mic_state state)
+int ril_set_two_mic_control(struct ril_handle *ril,
+                            enum __TwoMicSolDevice device,
+                            enum __TwoMicSolReport report)
 {
-    if (ril_connect_if_required(ril))
-        return 0;
+    int rc;
 
-    return _ril_set_two_mic_control(ril->client, device, state);
+    rc = ril_connect_if_required(ril);
+    if (rc != 0) {
+        ALOGE("%s: Failed to connect to RIL (%s)", __func__, strerror(rc));
+        return 0;
+    }
+
+    rc = SetTwoMicControl(ril->client, device, report);
+    if (rc != 0) {
+        ALOGE("%s: SetTwoMicControl() failed, rc=%d", __func__, rc);
+    }
+
+    return rc;
 }

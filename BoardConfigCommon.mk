@@ -57,6 +57,8 @@ BOARD_KERNEL_IMAGE_NAME := zImage
 TARGET_BOARD_PLATFORM := exynos3
 TARGET_SOC := exynos3470
 
+TARGET_LD_SHIM_LIBS := /system/vendor/lib/hw/camera.vendor.universal3470.so|libshim_camera.so
+
 # Seccomp filters
 BOARD_SECCOMP_POLICY += device/samsung/smdk3470-common/configs/seccomp
 

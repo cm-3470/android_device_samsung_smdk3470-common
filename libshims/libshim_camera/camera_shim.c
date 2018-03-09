@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-const char *_ZN7android16CameraParameters8ISO_AUTOE = "auto";
-const char *_ZN7android16CameraParameters7ISO_100E = "100";
-const char *_ZN7android16CameraParameters7ISO_200E = "200";
-const char *_ZN7android16CameraParameters7ISO_400E = "400";
-const char *_ZN7android16CameraParameters7ISO_800E = "800";
+const char _ZN7android16CameraParameters8ISO_AUTOE[] = "auto";
+const char _ZN7android16CameraParameters7ISO_100E[] = "100";
+const char _ZN7android16CameraParameters7ISO_200E[] = "200";
+const char _ZN7android16CameraParameters7ISO_400E[] = "400";
+const char _ZN7android16CameraParameters7ISO_800E[] = "800";
 
-const char *_ZN7android16CameraParameters17EFFECT_CARTOONIZEE = "cartoonize";
-const char *_ZN7android16CameraParameters23EFFECT_POINT_RED_YELLOWE = "point-red-yellow";
-const char *_ZN7android16CameraParameters18EFFECT_POINT_GREENE = "point-green";
-const char *_ZN7android16CameraParameters17EFFECT_POINT_BLUEE = "point-blue";
-const char *_ZN7android16CameraParameters19EFFECT_VINTAGE_COLDE = "vintage-cold";
-const char *_ZN7android16CameraParameters19EFFECT_VINTAGE_WARME = "vintage-warm";
-const char *_ZN7android16CameraParameters13EFFECT_WASHEDE = "washed";
+const char _ZN7android16CameraParameters17EFFECT_CARTOONIZEE[] = "cartoonize";
+const char _ZN7android16CameraParameters23EFFECT_POINT_RED_YELLOWE[] = "point-red-yellow";
+const char _ZN7android16CameraParameters18EFFECT_POINT_GREENE[] = "point-green";
+const char _ZN7android16CameraParameters17EFFECT_POINT_BLUEE[] = "point-blue";
+const char _ZN7android16CameraParameters19EFFECT_VINTAGE_COLDE[] = "vintage-cold";
+const char _ZN7android16CameraParameters19EFFECT_VINTAGE_WARME[] = "vintage-warm";
+const char _ZN7android16CameraParameters13EFFECT_WASHEDE[] = "washed";
 
-const char *_ZN7android16CameraParameters26PIXEL_FORMAT_YUV420SP_NV21E = "nv21";
+const char _ZN7android16CameraParameters26PIXEL_FORMAT_YUV420SP_NV21E[] = "nv21";
 
 int _ZNK7android16CameraParameters8getInt64EPKc(const char *key) { return -1; }
 

@@ -1,0 +1,75 @@
+From cc9fe3f550075408f39462e3016c6fe3365c378a Mon Sep 17 00:00:00 2001
+From: Lukas0610 <mail@lukasberger.at>
+Date: Fri, 15 Sep 2017 19:52:33 +0200
+Subject: [PATCH] sdcard: setup read/write mounts like the default one, not
+ remounting it
+
+Change-Id: If79ed4fef26509a651df4e3bc49d654043b3f6ed
+---
+ sdcard/sdcard.cpp | 36 ++++++++----------------------------
+ 1 file changed, 8 insertions(+), 28 deletions(-)
+
+diff --git a/sdcard/sdcard.cpp b/sdcard/sdcard.cpp
+index 3b07be6..09d60c7 100644
+--- a/sdcard/sdcard.cpp
++++ b/sdcard/sdcard.cpp
+@@ -345,27 +345,6 @@ static bool sdcardfs_setup(const std::string& source_path, const std::string& de
+     return true;
+ }
+ 
+-static bool sdcardfs_setup_bind_remount(const std::string& source_path, const std::string& dest_path,
+-                                        gid_t gid, mode_t mask) {
+-    std::string opts = android::base::StringPrintf("mask=%d,gid=%d", mask, gid);
+-
+-    if (mount(source_path.c_str(), dest_path.c_str(), nullptr,
+-            MS_BIND, nullptr) != 0) {
+-        PLOG(ERROR) << "failed to bind mount sdcardfs filesystem";
+-        return false;
+-    }
+-
+-    if (mount(source_path.c_str(), dest_path.c_str(), "none",
+-            MS_REMOUNT | MS_NOSUID | MS_NODEV | MS_NOEXEC | MS_NOATIME, opts.c_str()) != 0) {
+-        PLOG(ERROR) << "failed to mount sdcardfs filesystem";
+-        if (umount2(dest_path.c_str(), MNT_DETACH))
+-            PLOG(WARNING) << "Failed to unmount bind";
+-        return false;
+-    }
+-
+-    return true;
+-}
+-
+ static void run_sdcardfs(const std::string& source_path, const std::string& label, uid_t uid,
+                          gid_t gid, userid_t userid, bool multi_user, bool full_write,
+                          bool derive_gid) {
+@@ -379,9 +358,10 @@ static void run_sdcardfs(const std::string& source_path, const std::string& labe
+         // permissions are completely masked off.
+         if (!sdcardfs_setup(source_path, dest_path_default, uid, gid, multi_user, userid,
+                             AID_SDCARD_RW, 0006, derive_gid) ||
+-            !sdcardfs_setup_bind_remount(dest_path_default, dest_path_read, AID_EVERYBODY, 0027) ||
+-            !sdcardfs_setup_bind_remount(dest_path_default, dest_path_write, AID_EVERYBODY,
+-                                         full_write ? 0007 : 0027)) {
++            !sdcardfs_setup(source_path, dest_path_read, uid, gid, multi_user, userid,
++                            AID_EVERYBODY, 0027, derive_gid) ||
++            !sdcardfs_setup(source_path, dest_path_write, uid, gid, multi_user, userid,
++                            AID_EVERYBODY, full_write ? 0007 : 0027, derive_gid)) {
+             LOG(FATAL) << "failed to sdcardfs_setup";
+         }
+     } else {
+@@ -390,10 +370,10 @@ static void run_sdcardfs(const std::string& source_path, const std::string& labe
+         // deep inside attr_from_stat().
+         if (!sdcardfs_setup(source_path, dest_path_default, uid, gid, multi_user, userid,
+                             AID_SDCARD_RW, 0006, derive_gid) ||
+-            !sdcardfs_setup_bind_remount(dest_path_default, dest_path_read, AID_EVERYBODY,
+-                                         full_write ? 0027 : 0022) ||
+-            !sdcardfs_setup_bind_remount(dest_path_default, dest_path_write, AID_EVERYBODY,
+-                                         full_write ? 0007 : 0022)) {
++            !sdcardfs_setup(source_path, dest_path_read, uid, gid, multi_user, userid,
++                            AID_EVERYBODY, full_write ? 0027 : 0022, derive_gid) ||
++            !sdcardfs_setup(source_path, dest_path_write, uid, gid, multi_user, userid,
++                            AID_EVERYBODY, full_write ? 0007 : 0022, derive_gid)) {
+             LOG(FATAL) << "failed to sdcardfs_setup";
+         }
+     }
+-- 
+2.7.4
+

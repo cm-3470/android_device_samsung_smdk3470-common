@@ -185,6 +185,14 @@ PRODUCT_PROPERTY_OVERRIDES += \
 PRODUCT_PROPERTY_OVERRIDES += \
     persist.media.treble_omx=false
 
+# OpenMAX-shims
+PRODUCT_PACKAGES += \
+    libui_shim \
+    libExynosOMX_shim
+
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/android.hardware.media.omx@1.0-service.rc:system/vendor/etc/init/android.hardware.media.omx@1.0-service.rc
+
 # USB Accesory
 PRODUCT_PACKAGES += \
     com.android.future.usb.accessory

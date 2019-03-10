@@ -9,10 +9,10 @@ Change-Id: I4199e465f00cd5fa80bdbd670011416efb37d5a0
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/include/hardware/hwcomposer.h b/include/hardware/hwcomposer.h
-index aa466b3..cb9162c 100644
+index 9eb1aaf..9e2e30f 100644
 --- a/include/hardware/hwcomposer.h
 +++ b/include/hardware/hwcomposer.h
-@@ -336,7 +336,7 @@ typedef struct hwc_layer_1 {
+@@ -300,7 +300,7 @@ typedef struct hwc_layer_1 {
       * For 32-bit mode, this struct is 96 bytes, and needs to be padded as such
       * to maintain binary compatibility.
       */

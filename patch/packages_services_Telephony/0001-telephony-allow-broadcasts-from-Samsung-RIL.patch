@@ -1,4 +1,4 @@
-From 5a92e92c7ddf3ce3d1423144ce6eda7ba13d476d Mon Sep 17 00:00:00 2001
+From f5bed2881ed7a552197281e8d4a09688c1222122 Mon Sep 17 00:00:00 2001
 From: Tobias Gunkel <hennymcc@yahoo.de>
 Date: Mon, 10 Oct 2016 21:11:00 +0200
 Subject: [PATCH] telephony: allow broadcasts from Samsung RIL
@@ -17,12 +17,12 @@ Change-Id: Idd1bc1c9c68d29ac4a36a9b09a3a5fc5c28af3ee
  1 file changed, 4 insertions(+)
 
 diff --git a/AndroidManifest.xml b/AndroidManifest.xml
-index c2b9800..d20f3c1 100644
+index cf3300c..dd51556 100644
 --- a/AndroidManifest.xml
 +++ b/AndroidManifest.xml
-@@ -78,6 +78,10 @@
-     <protected-broadcast android:name= "com.android.phone.vvm.ACTION_VISUAL_VOICEMAIL_SERVICE_EVENT" />
+@@ -80,6 +80,10 @@
      <protected-broadcast android:name= "com.android.internal.telephony.CARRIER_VVM_PACKAGE_INSTALLED" />
+     <protected-broadcast android:name= "com.android.cellbroadcastreceiver.GET_LATEST_CB_AREA_INFO" />
  
 +    <protected-broadcast android:name= "com.samsung.intent.action.WB_AMR" />
 +    <protected-broadcast android:name= "android.intent.action.pcmclkctrl" />
@@ -32,5 +32,5 @@ index c2b9800..d20f3c1 100644
      <uses-permission android:name="android.permission.CALL_PHONE" />
      <uses-permission android:name="android.permission.CALL_PRIVILEGED" />
 -- 
-2.7.4
+2.20.1
 
